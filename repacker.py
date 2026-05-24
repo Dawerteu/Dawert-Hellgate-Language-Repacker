@@ -2249,7 +2249,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--font-atlas-language",
-        help="Language atlas to patch during CSV import, for example czech, polish, russian",
+        help="Language atlas to patch during CSV import, for example polish, russian, spanish",
     )
     parser.add_argument(
         "--font-safe",

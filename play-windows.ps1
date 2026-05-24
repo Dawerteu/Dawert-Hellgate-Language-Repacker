@@ -10,7 +10,7 @@ function Get-SavedLanguage {
             }
         }
     }
-    return "czech"
+    return ""
 }
 
 function Save-Language {
@@ -100,9 +100,15 @@ if (-not (Test-GameDir $GameDir)) {
 }
 
 $SavedLanguage = Get-SavedLanguage
-$Language = Read-Host "Language to apply before launch [$SavedLanguage]"
-if ([string]::IsNullOrWhiteSpace($Language)) {
-    $Language = $SavedLanguage
+if ([string]::IsNullOrWhiteSpace($SavedLanguage)) {
+    do {
+        $Language = Read-Host "Language to apply before launch"
+    } while ([string]::IsNullOrWhiteSpace($Language))
+} else {
+    $Language = Read-Host "Language to apply before launch [$SavedLanguage]"
+    if ([string]::IsNullOrWhiteSpace($Language)) {
+        $Language = $SavedLanguage
+    }
 }
 Save-Language $Language
 

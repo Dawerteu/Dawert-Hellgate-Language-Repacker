@@ -13,7 +13,7 @@ load_saved_language() {
       return 0
     fi
   fi
-  printf '%s\n' czech
+  return 0
 }
 
 save_language() {
@@ -78,8 +78,14 @@ if [[ ! -d "$GAME_DIR_VALUE/Data" || ! -f "$GAME_DIR_VALUE/Launcher.exe" || ! -f
 fi
 
 SAVED_LANGUAGE="$(load_saved_language)"
-read -r -p "Language to apply before launch [$SAVED_LANGUAGE]: " LANGUAGE_VALUE
-LANGUAGE_VALUE="${LANGUAGE_VALUE:-$SAVED_LANGUAGE}"
+if [[ -n "$SAVED_LANGUAGE" ]]; then
+  read -r -p "Language to apply before launch [$SAVED_LANGUAGE]: " LANGUAGE_VALUE
+  LANGUAGE_VALUE="${LANGUAGE_VALUE:-$SAVED_LANGUAGE}"
+else
+  while [[ -z "${LANGUAGE_VALUE:-}" ]]; do
+    read -r -p "Language to apply before launch: " LANGUAGE_VALUE
+  done
+fi
 save_language "$LANGUAGE_VALUE"
 
 if ! need_cmd wine; then

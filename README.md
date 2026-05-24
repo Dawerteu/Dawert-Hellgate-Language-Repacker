@@ -100,13 +100,13 @@ At startup the launcher asks for script UI language. Available UI languages:
 Or direct CLI:
 
 ```bash
-python3 repacker.py --game-dir "/path/to/Hellgate London" --language czech
+python3 repacker.py --game-dir "/path/to/Hellgate London" --language <language>
 ```
 
 Auto-find mode tries common London2038/Hellgate locations:
 
 ```bash
-python3 repacker.py --auto-find --language czech
+python3 repacker.py --auto-find --language <language>
 ```
 
 By default this patches the English runtime font atlas to the selected
@@ -136,13 +136,13 @@ Or run PowerShell:
 Or direct CLI:
 
 ```powershell
-py -3 repacker.py --game-dir "C:\Program Files\Flagship Studios\Hellgate London" --language czech
+py -3 repacker.py --game-dir "C:\Program Files\Flagship Studios\Hellgate London" --language <language>
 ```
 
 Auto-find mode also works on Windows:
 
 ```powershell
-py -3 repacker.py --auto-find --language czech
+py -3 repacker.py --auto-find --language <language>
 ```
 
 ## Play Without Launcher Overwrite
@@ -203,7 +203,7 @@ chmod +x update-linux.sh
 Direct CLI:
 
 ```bash
-python3 repacker.py --auto-find --action checksum-update --language czech
+python3 repacker.py --auto-find --action checksum-update --language <language>
 ```
 
 The play and update launchers remember the last selected language in:
@@ -256,7 +256,7 @@ properly while the game stays on `Language=English`.
 Direct CLI equivalent:
 
 ```bash
-python3 repacker.py --game-dir "/path/to/Hellgate London" --language czech --exclude none
+python3 repacker.py --game-dir "/path/to/Hellgate London" --language <language> --exclude none
 ```
 
 For custom installs, choose menu option 2. It shows a toggle list where `[X]`
@@ -270,7 +270,7 @@ It keeps the game running as `Language=English`.
 Export only London2038 strings that automatic language merge cannot translate:
 
 ```bash
-python3 repacker.py --auto-find --action export-csv --csv-scope london2038-untranslated --language czech
+python3 repacker.py --auto-find --action export-csv --csv-scope london2038-untranslated --language <language>
 ```
 
 Default output:
@@ -317,9 +317,9 @@ Fill only the `Translation` column. Empty translations stay English.
 Keep placeholder tokens exactly as they are, for example:
 
 ```text
-Rare [object] -> Vzacne [object]
-Damage: %d -> Poskozeni: %d
-<color=red>Warning</color> -> <color=red>Varovani</color>
+Rare [object] -> Translated rare [object]
+Damage: %d -> Translated damage: %d
+<color=red>Warning</color> -> <color=red>Translated warning</color>
 ```
 
 Do not translate or edit `Archive`, `Table`, or `StringID`.
@@ -327,17 +327,17 @@ Do not translate or edit `Archive`, `Table`, or `StringID`.
 Import the filled CSV:
 
 ```bash
-python3 repacker.py --auto-find --action import-csv --language czech --csv "Data/dawertrepacker/exports/london2038-untranslated-english-strings.csv"
+python3 repacker.py --auto-find --action import-csv --language <language> --csv "Data/dawertrepacker/exports/london2038-untranslated-english-strings.csv"
 ```
 
-When `--language czech` is used, import is layered:
+When `--language <language>` is used, import is layered:
 
 ```text
-clean English originals -> automatic Czech merge -> filled CSV translations
+clean English originals -> automatic selected-language merge -> filled CSV translations
 ```
 
 That means a CSV with only the missing London2038 rows acts as an add-on. Rows
-not present in the CSV still use the automatic Czech/Polish/Russian/etc. merge,
+not present in the CSV still use the automatic selected-language merge,
 and empty `Translation` cells stay English.
 
 Menu option 4 does the same interactively.
@@ -434,7 +434,7 @@ This is a merge, not a full language switch.
 
 ## Font Fix And Font-Safe Fallback
 
-Some Hellgate fonts do not contain every translated glyph. Czech accents or other Latin extended characters can render with the wrong font, as boxes, or with broken spacing.
+Some Hellgate fonts do not contain every translated glyph. Accents, Latin extended characters, or Cyrillic glyphs can render with the wrong font, as boxes, or with broken spacing.
 
 The normal fix is enabled by default. The repacker replaces:
 
@@ -445,9 +445,9 @@ data\uix\xml\fonts_atlas.xml
 with the selected language atlas, for example:
 
 ```text
-data\uix\xml\czech_fonts_atlas.xml
 data\uix\xml\polish_fonts_atlas.xml
 data\uix\xml\russian_fonts_atlas.xml
+data\uix\xml\spanish_fonts_atlas.xml
 ```
 
 This uses the original game font assets for that language, without switching
@@ -456,14 +456,14 @@ This uses the original game font assets for that language, without switching
 To disable the atlas patch:
 
 ```bash
-python3 repacker.py --auto-find --language czech --no-font-patch
+python3 repacker.py --auto-find --language <language> --no-font-patch
 ```
 
 If the atlas patch still does not render acceptably on a specific setup, use
 ASCII/font-safe mode as a fallback:
 
 ```bash
-python3 repacker.py --auto-find --language czech --font-safe
+python3 repacker.py --auto-find --language <language> --font-safe
 ```
 
 This keeps the translation but strips accents and replaces common unsupported symbols:

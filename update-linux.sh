@@ -13,7 +13,7 @@ load_saved_language() {
       return 0
     fi
   fi
-  printf '%s\n' czech
+  return 0
 }
 
 save_language() {
@@ -79,8 +79,14 @@ fi
 
 echo
 SAVED_LANGUAGE="$(load_saved_language)"
-read -r -p "Language to install after update [$SAVED_LANGUAGE]: " LANGUAGE_VALUE
-LANGUAGE_VALUE="${LANGUAGE_VALUE:-$SAVED_LANGUAGE}"
+if [[ -n "$SAVED_LANGUAGE" ]]; then
+  read -r -p "Language to install after update [$SAVED_LANGUAGE]: " LANGUAGE_VALUE
+  LANGUAGE_VALUE="${LANGUAGE_VALUE:-$SAVED_LANGUAGE}"
+else
+  while [[ -z "${LANGUAGE_VALUE:-}" ]]; do
+    read -r -p "Language to install after update: " LANGUAGE_VALUE
+  done
+fi
 save_language "$LANGUAGE_VALUE"
 
 echo

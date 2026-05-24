@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.Python
+.venv/
+venv/
+env/
+
+# Runtime output created inside a game Data folder.
+dawertrepacker/
+
+# Local editor/system files.
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp

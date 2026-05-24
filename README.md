@@ -214,6 +214,10 @@ dawert-launcher.conf
 
 Next time, pressing Enter uses that saved language.
 
+On Linux, `play-linux.sh` also remembers launch mode. If the game appears on
+the taskbar but does not open, use the Wine virtual desktop mode. That mode is
+the default until you choose normal Wine fullscreen/window mode.
+
 ## What It Asks For
 
 - `Hellgate game folder`: the folder that contains `Launcher.exe` and `Data`.

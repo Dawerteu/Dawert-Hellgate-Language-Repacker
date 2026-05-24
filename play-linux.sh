@@ -16,9 +16,25 @@ load_saved_language() {
   return 0
 }
 
-save_language() {
+load_saved_launch_mode() {
+  if [[ -f "$CONFIG_FILE" ]]; then
+    local value
+    value="$(sed -n 's/^launch_mode=//p' "$CONFIG_FILE" | tail -n 1)"
+    if [[ "$value" == "normal" || "$value" == "desktop" ]]; then
+      printf '%s\n' "$value"
+      return 0
+    fi
+  fi
+  printf '%s\n' desktop
+}
+
+save_settings() {
   local value="$1"
-  printf 'language=%s\n' "$value" > "$CONFIG_FILE"
+  local launch_mode="$2"
+  {
+    printf 'language=%s\n' "$value"
+    printf 'launch_mode=%s\n' "$launch_mode"
+  } > "$CONFIG_FILE"
 }
 
 need_cmd() {
@@ -56,6 +72,12 @@ find_game_dir() {
   return 1
 }
 
+desktop_size() {
+  if command -v xrandr >/dev/null 2>&1; then
+    xrandr 2>/dev/null | awk '/\*/ { print $1; exit }'
+  fi
+}
+
 echo "Dawert direct play launcher"
 echo "==========================="
 echo "Normal play bypasses Launcher.exe so it cannot overwrite localized archives."
@@ -86,12 +108,30 @@ else
     read -r -p "Language to apply before launch: " LANGUAGE_VALUE
   done
 fi
-save_language "$LANGUAGE_VALUE"
 
 if ! need_cmd wine; then
   echo "Wine was not found. Repack applied, but the game cannot be launched from this script." >&2
   exit 1
 fi
+
+SAVED_LAUNCH_MODE="$(load_saved_launch_mode)"
+echo
+echo "Launch window mode:"
+echo "  1. Wine virtual desktop - safer when the game jumps back to taskbar"
+echo "  2. Normal Wine fullscreen/window"
+if [[ "$SAVED_LAUNCH_MODE" == "normal" ]]; then
+  DEFAULT_LAUNCH_CHOICE=2
+else
+  DEFAULT_LAUNCH_CHOICE=1
+fi
+read -r -p "Choose [$DEFAULT_LAUNCH_CHOICE]: " LAUNCH_CHOICE
+LAUNCH_CHOICE="${LAUNCH_CHOICE:-$DEFAULT_LAUNCH_CHOICE}"
+if [[ "$LAUNCH_CHOICE" == "2" ]]; then
+  LAUNCH_MODE="normal"
+else
+  LAUNCH_MODE="desktop"
+fi
+save_settings "$LANGUAGE_VALUE" "$LAUNCH_MODE"
 
 if [[ -z "${WINEPREFIX:-}" && "$GAME_DIR_VALUE" == *"/drive_c/"* ]]; then
   export WINEPREFIX="${GAME_DIR_VALUE%%/drive_c/*}"
@@ -136,4 +176,10 @@ echo
 echo "Starting game directly:"
 echo "  $GAME_DIR_VALUE/MP_x64/London2038_dx9_x64.exe"
 cd "$GAME_DIR_VALUE/MP_x64"
+if [[ "$LAUNCH_MODE" == "desktop" ]]; then
+  DESKTOP_SIZE_VALUE="${LONDON2038_DESKTOP_SIZE:-$(desktop_size)}"
+  DESKTOP_SIZE_VALUE="${DESKTOP_SIZE_VALUE:-1920x1080}"
+  echo "Wine virtual desktop: $DESKTOP_SIZE_VALUE"
+  exec wine explorer "/desktop=London2038,$DESKTOP_SIZE_VALUE" "London2038_dx9_x64.exe"
+fi
 exec wine "London2038_dx9_x64.exe"

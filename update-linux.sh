@@ -2,6 +2,24 @@
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG_FILE="$SCRIPT_DIR/dawert-launcher.conf"
+
+load_saved_language() {
+  if [[ -f "$CONFIG_FILE" ]]; then
+    local value
+    value="$(sed -n 's/^language=//p' "$CONFIG_FILE" | tail -n 1)"
+    if [[ -n "$value" ]]; then
+      printf '%s\n' "$value"
+      return 0
+    fi
+  fi
+  printf '%s\n' czech
+}
+
+save_language() {
+  local value="$1"
+  printf 'language=%s\n' "$value" > "$CONFIG_FILE"
+}
 
 need_cmd() {
   command -v "$1" >/dev/null 2>&1
@@ -60,8 +78,10 @@ if [[ ! -d "$GAME_DIR_VALUE/Data" || ! -f "$GAME_DIR_VALUE/Launcher.exe" ]]; the
 fi
 
 echo
-read -r -p "Language to install after update [czech, empty = czech]: " LANGUAGE_VALUE
-LANGUAGE_VALUE="${LANGUAGE_VALUE:-czech}"
+SAVED_LANGUAGE="$(load_saved_language)"
+read -r -p "Language to install after update [$SAVED_LANGUAGE]: " LANGUAGE_VALUE
+LANGUAGE_VALUE="${LANGUAGE_VALUE:-$SAVED_LANGUAGE}"
+save_language "$LANGUAGE_VALUE"
 
 echo
 echo "Running checksum updater..."

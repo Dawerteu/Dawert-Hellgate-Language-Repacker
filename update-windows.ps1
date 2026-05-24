@@ -1,5 +1,22 @@
 $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ConfigFile = Join-Path $ScriptDir "dawert-launcher.conf"
+
+function Get-SavedLanguage {
+    if (Test-Path $ConfigFile) {
+        foreach ($Line in Get-Content $ConfigFile) {
+            if ($Line -match "^language=(.+)$") {
+                return $Matches[1].Trim()
+            }
+        }
+    }
+    return "czech"
+}
+
+function Save-Language {
+    param([string]$Language)
+    Set-Content -Path $ConfigFile -Value "language=$Language" -Encoding ASCII
+}
 
 function Find-Python {
     if (Get-Command py -ErrorAction SilentlyContinue) {
@@ -81,10 +98,12 @@ if (-not (Test-GameDir $GameDir)) {
     exit 1
 }
 
-$Language = Read-Host "Language to install after update [czech]"
+$SavedLanguage = Get-SavedLanguage
+$Language = Read-Host "Language to install after update [$SavedLanguage]"
 if ([string]::IsNullOrWhiteSpace($Language)) {
-    $Language = "czech"
+    $Language = $SavedLanguage
 }
+Save-Language $Language
 
 Write-Host ""
 Write-Host "Running checksum updater..."

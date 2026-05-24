@@ -206,6 +206,14 @@ Direct CLI:
 python3 repacker.py --auto-find --action checksum-update --language czech
 ```
 
+The play and update launchers remember the last selected language in:
+
+```text
+dawert-launcher.conf
+```
+
+Next time, pressing Enter uses that saved language.
+
 ## What It Asks For
 
 - `Hellgate game folder`: the folder that contains `Launcher.exe` and `Data`.

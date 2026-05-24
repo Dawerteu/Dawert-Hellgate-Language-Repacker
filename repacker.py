@@ -1979,6 +1979,7 @@ def interactive_args() -> argparse.Namespace:
         csv_scope=csv_scope,
         font_atlas_language=font_atlas_language or None,
         interactive=False,
+        quiet_decrypt_log=False,
     )
 
 
@@ -2040,7 +2041,7 @@ def main() -> int:
     game_dir = resolve_game_dir(args.game_dir)
     data_dir = game_dir / "Data"
     setup_run_logging(data_dir, args.action)
-    DETAILED_DECRYPT_LOG = not args.quiet_decrypt_log
+    DETAILED_DECRYPT_LOG = not getattr(args, "quiet_decrypt_log", False)
     print(f"Game directory: {game_dir}")
     print(f"Repacker data: {repacker_root(data_dir)}")
 

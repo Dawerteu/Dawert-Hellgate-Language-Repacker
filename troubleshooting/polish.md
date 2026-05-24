@@ -19,6 +19,7 @@ start-windows.bat
 
 - Jeśli PowerShell blokuje skrypty, użyj `.bat` zamiast `.ps1`.
 - Jeśli brakuje `py`, ale działa `python`, BAT launcher użyje `python`.
+- Jeśli `Launcher.exe` nie działa ze zmienionymi plikami albo pobiera oryginalną lokalizację ponownie, użyj do grania `play-windows.bat`.
 
 ## Linux
 
@@ -37,6 +38,15 @@ sudo zypper install python3
 chmod +x setup-linux.sh start-linux.sh
 ./start-linux.sh
 ```
+
+- Jeśli launcher nadpisuje przetłumaczone pliki, uruchom grę przez:
+
+```bash
+chmod +x play-linux.sh
+./play-linux.sh
+```
+
+Skrypt `play-*` ma tryb normalnej gry i tryb oficjalnej aktualizacji. Tryb aktualizacji najpierw przywraca czyste dane, uruchamia `Launcher.exe`, po zamknięciu odświeża czysty backup i może ponownie zastosować tłumaczenie.
 
 ## Logi i restore
 

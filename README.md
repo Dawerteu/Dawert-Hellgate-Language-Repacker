@@ -82,6 +82,8 @@ The launcher opens a numbered menu with the DAWERT banner. You can choose:
 8. List languages
 9. Restore originals
 10. Dry run normal install
+11. Refresh clean backup after official launcher update
+12. Official checksum updater
 ```
 
 At startup the launcher asks for script UI language. Available UI languages:
@@ -143,6 +145,67 @@ Auto-find mode also works on Windows:
 py -3 repacker.py --auto-find --language czech
 ```
 
+## Play Without Launcher Overwrite
+
+London2038 `Launcher.exe` can check localized archive sizes and download the
+official files again. If you start the launcher after installing a translation,
+it may overwrite the repacked `.dat/.idx` files every time.
+
+Use the direct play launcher for normal play:
+
+Windows:
+
+```text
+play-windows.bat
+```
+
+Linux:
+
+```bash
+chmod +x play-linux.sh
+./play-linux.sh
+```
+
+The direct play launcher has two modes:
+
+```text
+1. Play now
+2. Official checksum update
+```
+
+Mode 1 applies the selected language repack, then starts:
+
+```text
+MP_x64\London2038_dx9_x64.exe
+```
+
+Mode 2 is for official updates or repair. It reads `Patcher.xml`, downloads the
+latest `checksums.xml` from the official `RemoteDirectory`, verifies MD5/size,
+downloads changed official files from that same server, refreshes the clean
+backup, then applies the selected language again. This avoids the launcher
+refusing modified data while still keeping translated files for play.
+
+You can also run the updater directly:
+
+Windows:
+
+```text
+update-windows.bat
+```
+
+Linux:
+
+```bash
+chmod +x update-linux.sh
+./update-linux.sh
+```
+
+Direct CLI:
+
+```bash
+python3 repacker.py --auto-find --action checksum-update --language czech
+```
+
 ## What It Asks For
 
 - `Hellgate game folder`: the folder that contains `Launcher.exe` and `Data`.
@@ -153,6 +216,8 @@ py -3 repacker.py --auto-find --language czech
   - `import-csv`: import filled CSV translations by `StringID`.
   - `list`: show available source languages found in the archives.
   - `restore`: restore original localized archives from backup.
+  - `refresh-backup`: refresh the clean backup after an official launcher update.
+  - `checksum-update`: verify/download official files from the London2038 checksum manifest, refresh backup, then optionally reinstall language.
 - `Source language`: language folder to merge into English, for example:
   - `czech`
   - `french`

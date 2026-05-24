@@ -19,6 +19,7 @@ start-windows.bat
 
 - Si PowerShell bloquea scripts, usa `.bat` en vez de `.ps1`.
 - Si falta `py` pero funciona `python`, el BAT launcher usará `python`.
+- Si `Launcher.exe` no funciona con datos modificados o descarga otra vez la localización original, usa `play-windows.bat` para jugar.
 
 ## Linux
 
@@ -37,6 +38,15 @@ sudo zypper install python3
 chmod +x setup-linux.sh start-linux.sh
 ./start-linux.sh
 ```
+
+- Si el launcher sobrescribe los archivos traducidos, inicia el juego con:
+
+```bash
+chmod +x play-linux.sh
+./play-linux.sh
+```
+
+El script `play-*` tiene modo de juego normal y modo de update oficial. El modo update primero restaura datos limpios, inicia `Launcher.exe`, actualiza el backup limpio después de cerrarlo y luego puede aplicar la traducción otra vez.
 
 ## Logs y restore
 

@@ -19,6 +19,7 @@ start-windows.bat
 
 - Ha a PowerShell blokkolja a szkripteket, használd a `.bat` fájlt.
 - Ha nincs `py`, de a `python` működik, a BAT launcher a `python` parancsot használja.
+- Ha a `Launcher.exe` nem indul módosított adatokkal, vagy újra letölti az eredeti lokalizációt, játékhoz használd a `play-windows.bat` fájlt.
 
 ## Linux
 
@@ -37,6 +38,15 @@ sudo zypper install python3
 chmod +x setup-linux.sh start-linux.sh
 ./start-linux.sh
 ```
+
+- Ha a launcher felülírja a fordított fájlokat, így indítsd a játékot:
+
+```bash
+chmod +x play-linux.sh
+./play-linux.sh
+```
+
+A `play-*` szkriptben van normál játék mód és hivatalos update mód. Az update mód először visszaállítja a tiszta adatokat, elindítja a `Launcher.exe` fájlt, kilépés után frissíti a tiszta backupot, majd újra alkalmazhatja a fordítást.
 
 ## Logok és visszaállítás
 

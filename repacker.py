@@ -13,15 +13,19 @@ from __future__ import annotations
 import argparse
 import csv
 import datetime as _dt
+import hashlib
 import os
 import shutil
 import struct
 import sys
 import time
 import unicodedata
+import urllib.request
+import xml.etree.ElementTree as ET
 import zlib
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import quote, urljoin
 
 
 ARCHIVE_GLOB = "*localized*.idx"
@@ -35,6 +39,8 @@ DEFAULT_CSV_NAME = "hellgate-english-strings.csv"
 LONDON2038_CSV_NAME = "london2038-english-strings.csv"
 LONDON2038_UNTRANSLATED_CSV_NAME = "london2038-untranslated-english-strings.csv"
 CSV_FIELDS = ("Archive", "Table", "StringID", "English", "Translation", "Directory", "Attributes")
+PATCHER_XML = "Patcher.xml"
+CHECKSUMS_XML = "checksums.xml"
 FONT_ATLAS_TARGET = r"data\uix\xml\fonts_atlas.xml"
 FONT_ATLAS_BY_LANGUAGE = {
     "czech": r"data\uix\xml\czech_fonts_atlas.xml",
@@ -483,7 +489,7 @@ SCRIPT_UI_LANGUAGES = [
 
 UI_UPDATES = {
     "en": {"menu_1": "Install language", "done_play": "Done. You can play the game."},
-    "cs": {"menu_1": "Instalovat jazyk", "done_play": "Hotovo. Muzes hrat hru."},
+    "cs": {"menu_1": "Instalovat jazyk", "menu_11": "Obnovit cistou zalohu po oficialnim update launcherem", "done_play": "Hotovo. Muzes hrat hru."},
     "ru": {"menu_1": "Установить язык", "done_play": "Готово. Можно играть."},
     "pl": {"menu_1": "Zainstaluj język", "done_play": "Gotowe. Możesz grać."},
     "hu": {"menu_1": "Nyelv telepítése", "done_play": "Kész. Játszhatsz a játékkal."},
@@ -494,6 +500,23 @@ UI_UPDATES = {
 
 for _lang, _values in UI_UPDATES.items():
     UI.setdefault(_lang, {}).update(_values)
+
+UI["en"]["menu_11"] = "Refresh clean backup after official launcher update"
+UI["cs"]["menu_11"] = "Obnovit cistou zalohu po oficialnim update launcherem"
+UI["ru"]["menu_11"] = "Обновить чистый backup после официального launcher update"
+UI["pl"]["menu_11"] = "Odśwież czysty backup po aktualizacji launcherem"
+UI["hu"]["menu_11"] = "Tiszta backup frissítése launcher update után"
+UI["it"]["menu_11"] = "Aggiorna backup pulito dopo update del launcher"
+UI["fr"]["menu_11"] = "Rafraîchir le backup propre après update launcher"
+UI["es"]["menu_11"] = "Actualizar backup limpio después del launcher"
+UI["en"]["menu_12"] = "Official checksum updater"
+UI["cs"]["menu_12"] = "Oficialni checksum updater"
+UI["ru"]["menu_12"] = "Официальный checksum updater"
+UI["pl"]["menu_12"] = "Oficjalny checksum updater"
+UI["hu"]["menu_12"] = "Hivatalos checksum updater"
+UI["it"]["menu_12"] = "Updater checksum ufficiale"
+UI["fr"]["menu_12"] = "Updater checksum officiel"
+UI["es"]["menu_12"] = "Updater checksum oficial"
 
 
 @dataclass
@@ -538,6 +561,14 @@ class Archive:
     crypt: CryptVariant
     strings: list[str]
     entries: list[Entry]
+
+
+@dataclass
+class RemoteFile:
+    name: str
+    md5: str
+    size: int
+    download: bool
 
 
 def u32(buf: bytes | bytearray, off: int) -> int:
@@ -1089,6 +1120,210 @@ def restore_originals(game_dir: Path) -> None:
     fix_language_dat(data_dir, "restore")
     print(f"Restored original archives from: {backup_dir}")
     print(color_text(tr("done_play"), "green", bold=True))
+
+
+def refresh_original_backup(game_dir: Path) -> None:
+    data_dir = game_dir / "Data"
+    current_archives = discover_archives(data_dir)
+    if not current_archives:
+        raise SystemExit(f"No supported localized archives found in {data_dir}")
+
+    archive_names = [archive.base for archive in current_archives]
+    if (data_dir / f"{FONT_ARCHIVE_BASE}.idx").exists() and FONT_ARCHIVE_BASE not in archive_names:
+        archive_names.append(FONT_ARCHIVE_BASE)
+
+    backup_dir = repacker_root(data_dir) / "backup" / "original"
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    print("Refreshing clean original backup from current game files.")
+    print("Use this only after the official launcher has finished repairing/downloading files.")
+
+    copied = 0
+    for base in archive_names:
+        for ext in ("dat", "idx"):
+            source = data_dir / f"{base}.{ext}"
+            if not source.exists():
+                print(f"WARN missing current file for backup refresh: {source.name}")
+                continue
+            target = backup_dir / source.name
+            shutil.copy2(source, target)
+            copied += 1
+            print(f"BACKUP {source.name} -> {target}")
+
+    (backup_dir / "language.dat").write_text(LANGUAGE_DAT_TEXT, encoding="ascii")
+    fix_language_dat(data_dir, "refresh-backup")
+    print(f"Refreshed backup files: {copied}")
+    print(f"Backup folder: {backup_dir}")
+
+
+def file_md5(path: Path) -> str:
+    digest = hashlib.md5()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest().upper()
+
+
+def read_patcher_remote(game_dir: Path) -> str:
+    patcher = game_dir / PATCHER_XML
+    if not patcher.exists():
+        raise SystemExit(f"Missing {PATCHER_XML}: {patcher}")
+    root = ET.parse(patcher).getroot()
+    for option in root.findall(".//option"):
+        if option.get("key", "").lower() == "remotedirectory":
+            value = option.get("value", "").strip()
+            if value:
+                return value if value.endswith("/") else value + "/"
+    raise SystemExit(f"RemoteDirectory not found in {patcher}")
+
+
+def parse_remote_manifest(manifest: Path) -> list[RemoteFile]:
+    root = ET.parse(manifest).getroot()
+    files: list[RemoteFile] = []
+    for item in root.findall(".//file"):
+        name = item.get("name", "").strip()
+        md5 = item.get("hash", "").strip().upper()
+        size_raw = item.get("filesize", "0").strip()
+        download = item.get("download", "false").strip().lower() == "true"
+        if not name or not md5:
+            continue
+        try:
+            size = int(size_raw)
+        except ValueError:
+            size = 0
+        files.append(RemoteFile(name, md5, size, download))
+    if not files:
+        raise SystemExit(f"No file entries found in {manifest}")
+    return files
+
+
+def download_latest_manifest(game_dir: Path, remote_dir: str) -> Path:
+    cache_dir = repacker_root(game_dir / "Data") / "update-cache"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    target = cache_dir / CHECKSUMS_XML
+    url = urljoin(remote_dir, CHECKSUMS_XML)
+    print(f"Fetching latest checksum manifest:")
+    print(f"  {url}")
+    try:
+        with urllib.request.urlopen(url, timeout=60) as response, target.open("wb") as out:
+            shutil.copyfileobj(response, out)
+    except Exception as exc:
+        local = game_dir / CHECKSUMS_XML
+        if local.exists():
+            print(f"WARN could not fetch latest {CHECKSUMS_XML}: {exc}")
+            print(f"WARN falling back to local manifest: {local}")
+            return local
+        raise RuntimeError(f"Cannot fetch checksum manifest and no local fallback exists: {exc}") from exc
+    return target
+
+
+def remote_file_url(remote_dir: str, name: str) -> str:
+    parts = name.replace("\\", "/").split("/")
+    encoded = "/".join(quote(part) for part in parts)
+    return urljoin(remote_dir, encoded)
+
+
+def remote_file_path(game_dir: Path, name: str) -> Path:
+    return game_dir / Path(name.replace("\\", "/"))
+
+
+def verify_remote_file(game_dir: Path, item: RemoteFile) -> tuple[bool, str]:
+    return verify_path(path=remote_file_path(game_dir, item.name), expected_md5=item.md5, expected_size=item.size)
+
+
+def verify_path(path: Path, expected_md5: str, expected_size: int) -> tuple[bool, str]:
+    if not path.exists():
+        return False, "missing"
+    actual_size = path.stat().st_size
+    if expected_size and actual_size != expected_size:
+        return False, f"size {actual_size} != {expected_size}"
+    actual_md5 = file_md5(path)
+    if actual_md5 != expected_md5:
+        return False, f"md5 {actual_md5} != {expected_md5}"
+    return True, "ok"
+
+
+def download_remote_file(game_dir: Path, remote_dir: str, item: RemoteFile) -> None:
+    target = remote_file_path(game_dir, item.name)
+    tmp = target.with_suffix(target.suffix + ".download")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    url = remote_file_url(remote_dir, item.name)
+    print(f"DOWNLOAD {item.name}")
+    print(f"  {url}")
+    with urllib.request.urlopen(url, timeout=60) as response, tmp.open("wb") as out:
+        total = int(response.headers.get("Content-Length", "0") or "0")
+        done = 0
+        last_report = 0
+        while True:
+            chunk = response.read(1024 * 1024)
+            if not chunk:
+                break
+            out.write(chunk)
+            done += len(chunk)
+            now = time.time()
+            if now - last_report >= 0.5:
+                if total:
+                    percent = (done / total) * 100
+                    print(f"  {done}/{total} bytes ({percent:.1f}%)")
+                else:
+                    print(f"  {done} bytes")
+                last_report = now
+    ok, reason = verify_path(tmp, item.md5, item.size)
+    if not ok:
+        tmp.unlink(missing_ok=True)
+        raise RuntimeError(f"Downloaded file failed checksum: {item.name}: {reason}")
+    tmp.replace(target)
+    print(f"OK {item.name}")
+
+
+def checksum_update(game_dir: Path, install_language: str | None = None) -> None:
+    data_dir = game_dir / "Data"
+    backup_dir = repacker_root(data_dir) / "backup" / "original"
+    if backup_dir.is_dir():
+        print("Restoring clean backup before checksum update.")
+        restore_originals(game_dir)
+    else:
+        print("No clean backup found yet; verifying current game files as-is.")
+
+    remote_dir = read_patcher_remote(game_dir)
+    manifest_path = download_latest_manifest(game_dir, remote_dir)
+    manifest = parse_remote_manifest(manifest_path)
+    print(f"Remote: {remote_dir}")
+    print(f"Manifest: {manifest_path}")
+
+    checked = 0
+    downloaded = 0
+    blocked: list[str] = []
+    for item in manifest:
+        checked += 1
+        ok, reason = verify_remote_file(game_dir, item)
+        if ok:
+            print(f"OK {item.name}")
+            continue
+        print(f"BAD {item.name}: {reason}")
+        if not item.download:
+            blocked.append(f"{item.name}: {reason} (manifest download=false)")
+            continue
+        download_remote_file(game_dir, remote_dir, item)
+        downloaded += 1
+
+    if blocked:
+        print("\nFiles that cannot be downloaded by checksum manifest:")
+        for item in blocked:
+            print(f"  {item}")
+        print("Run official installer/launcher repair for these, then run the updater again.")
+        raise SystemExit("Checksum update stopped because some non-downloadable files are not clean.")
+
+    print(f"\nChecksum update checked={checked} downloaded={downloaded} blocked={len(blocked)}")
+    refresh_original_backup(game_dir)
+    if install_language:
+        build_install(
+            game_dir,
+            normalize_language(install_language),
+            parse_excludes(["none"]),
+            dry_run=False,
+            font_safe=False,
+            patch_fonts=True,
+        )
 
 
 def append_patch_archive(
@@ -1916,8 +2151,10 @@ def interactive_args() -> argparse.Namespace:
     print(f"  8. {tr('menu_8')}")
     print(f"  9. {tr('menu_9')}")
     print(f"  10. {tr('menu_10')}")
+    print(f"  11. {tr('menu_11')}")
+    print(f"  12. {tr('menu_12')}")
     print(f"  0. {tr('menu_0')}")
-    choice = prompt_number(tr("choose_action"), 0, 10, 1)
+    choice = prompt_number(tr("choose_action"), 0, 12, 1)
     if choice == 0:
         raise SystemExit(0)
 
@@ -1955,6 +2192,11 @@ def interactive_args() -> argparse.Namespace:
         action = "list"
     elif choice == 9:
         action = "restore"
+    elif choice == 11:
+        action = "refresh-backup"
+    elif choice == 12:
+        action = "checksum-update"
+        language = prompt_language(game)
     else:
         language = prompt_language(game)
         if choice == 2:
@@ -1989,7 +2231,11 @@ def main() -> int:
     parser.add_argument("--game-dir", help="Hellgate folder containing Data/")
     parser.add_argument("--auto-find", action="store_true", help="Try to find the Hellgate folder automatically")
     parser.add_argument("--language", help="Source language to merge into English")
-    parser.add_argument("--action", choices=("install", "list", "restore", "export-csv", "import-csv"), default="install")
+    parser.add_argument(
+        "--action",
+        choices=("install", "list", "restore", "refresh-backup", "checksum-update", "export-csv", "import-csv"),
+        default="install",
+    )
     parser.add_argument("--dry-run", action="store_true", help="Build output but do not install")
     parser.add_argument("--csv", help="CSV path for export-csv or import-csv")
     parser.add_argument(
@@ -2047,6 +2293,14 @@ def main() -> int:
 
     if args.action == "restore":
         restore_originals(game_dir)
+        return 0
+
+    if args.action == "refresh-backup":
+        refresh_original_backup(game_dir)
+        return 0
+
+    if args.action == "checksum-update":
+        checksum_update(game_dir, args.language)
         return 0
 
     if args.action == "export-csv":

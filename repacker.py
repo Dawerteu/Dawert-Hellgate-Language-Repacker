@@ -30,7 +30,7 @@ DEFAULT_EXCLUDES: set[str] = set()
 FONT_ARCHIVE_BASE = "hellgate000"
 REPACKER_DIR_NAME = "dawertrepacker"
 LANGUAGE_DAT_TEXT = "Language=English"
-DETAILED_DECRYPT_LOG = True
+DETAILED_DECRYPT_LOG = False
 DEFAULT_CSV_NAME = "hellgate-english-strings.csv"
 LONDON2038_CSV_NAME = "london2038-english-strings.csv"
 LONDON2038_UNTRANSLATED_CSV_NAME = "london2038-untranslated-english-strings.csv"
@@ -507,6 +507,7 @@ class CryptVariant:
 CRYPT_OLD = CryptVariant("old", 0x00010DCD, 0x0F4559D5)
 CRYPT_L2038 = CryptVariant("l2038", 0x000007F6, 0x1017D017)
 CRYPT_VARIANTS = (CRYPT_OLD, CRYPT_L2038)
+ANSI_ENABLED: bool | None = None
 
 
 def log_detail(message: str) -> None:
@@ -890,7 +891,10 @@ def discover_archives(data_dir: Path) -> list[Archive]:
             continue
         dat_path = idx_path.with_suffix(".dat")
         if dat_path.exists():
-            archives.append(load_archive(data_dir, idx_path))
+            try:
+                archives.append(load_archive(data_dir, idx_path))
+            except Exception as exc:
+                print(f"WARN skipping archive {idx_path.name}: {exc}")
         else:
             log_detail(f"  skip idx without dat: {idx_path.name}")
     log_detail(f"Discover archives done: count={len(archives)}")
@@ -1232,7 +1236,34 @@ ANSI = {
 
 
 def supports_color() -> bool:
-    return os.environ.get("NO_COLOR") is None and bool(getattr(sys.stdout, "isatty", lambda: False)())
+    global ANSI_ENABLED
+    if ANSI_ENABLED is not None:
+        return ANSI_ENABLED
+    if os.environ.get("NO_COLOR") is not None or not bool(getattr(sys.stdout, "isatty", lambda: False)()):
+        ANSI_ENABLED = False
+        return False
+    if os.name != "nt":
+        ANSI_ENABLED = True
+        return True
+
+    try:
+        import ctypes
+
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.GetStdHandle(-11)
+        mode = ctypes.c_uint32()
+        if not kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
+            ANSI_ENABLED = False
+            return False
+        ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004
+        if not kernel32.SetConsoleMode(handle, mode.value | ENABLE_VIRTUAL_TERMINAL_PROCESSING):
+            ANSI_ENABLED = False
+            return False
+        ANSI_ENABLED = True
+        return True
+    except Exception:
+        ANSI_ENABLED = False
+        return False
 
 
 def color_text(text: str, color_name: str, bold: bool = False) -> str:
@@ -1995,8 +2026,7 @@ def main() -> int:
     )
     args = parser.parse_args()
     global DETAILED_DECRYPT_LOG
-    if args.quiet_decrypt_log:
-        DETAILED_DECRYPT_LOG = False
+    DETAILED_DECRYPT_LOG = False
     if args.interactive or not args.game_dir:
         if args.auto_find and not args.game_dir:
             found = auto_find_game_dir()
@@ -2010,6 +2040,7 @@ def main() -> int:
     game_dir = resolve_game_dir(args.game_dir)
     data_dir = game_dir / "Data"
     setup_run_logging(data_dir, args.action)
+    DETAILED_DECRYPT_LOG = not args.quiet_decrypt_log
     print(f"Game directory: {game_dir}")
     print(f"Repacker data: {repacker_root(data_dir)}")
 

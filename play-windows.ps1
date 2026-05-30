@@ -13,19 +13,23 @@ function Get-SavedLanguage {
     return ""
 }
 
-function Save-Language {
-    param([string]$Language)
-    Set-Content -Path $ConfigFile -Value "language=$Language" -Encoding ASCII
+function Get-InstalledLanguage {
+    param([string]$GameDir)
+    $File = Join-Path $GameDir "Data\dawertrepacker\installed-language.txt"
+    if (Test-Path $File) {
+        $Value = (Get-Content $File -TotalCount 1).Trim()
+        if (-not [string]::IsNullOrWhiteSpace($Value)) {
+            return $Value
+        }
+    }
+    return ""
 }
 
-function Find-Python {
-    if (Get-Command py -ErrorAction SilentlyContinue) {
-        return @("py", "-3")
-    }
-    if (Get-Command python -ErrorAction SilentlyContinue) {
-        return @("python")
-    }
-    return $null
+function Save-Settings {
+    param([string]$Language)
+    Set-Content -Path $ConfigFile -Value @(
+        "language=$Language"
+    ) -Encoding ASCII
 }
 
 function Test-GameDir {
@@ -34,8 +38,22 @@ function Test-GameDir {
         $Path -and
         (Test-Path (Join-Path $Path "Data")) -and
         (Test-Path (Join-Path $Path "Launcher.exe")) -and
-        (Test-Path (Join-Path $Path "MP_x64\London2038_dx9_x64.exe"))
+        (Find-GameExe $Path)
     )
+}
+
+function Find-GameExe {
+    param([string]$GameDir)
+    $Candidates = @(
+        (Join-Path $GameDir "MP_x64\London2038_dx9_x64.exe"),
+        (Join-Path $GameDir "MP_x86\London2038_dx9_x86.exe")
+    )
+    foreach ($Candidate in $Candidates) {
+        if (Test-Path $Candidate) {
+            return $Candidate
+        }
+    }
+    return $null
 }
 
 function Find-GameDir {
@@ -63,37 +81,17 @@ function Find-GameDir {
     return $null
 }
 
-function Run-Python {
-    param([string[]]$Python, [string[]]$Arguments)
-    if ($Python.Count -gt 1) {
-        $PythonArgs = $Python[1..($Python.Count - 1)]
-    } else {
-        $PythonArgs = @()
-    }
-    & $Python[0] @PythonArgs @Arguments
-    if ($LASTEXITCODE -ne 0) {
-        exit $LASTEXITCODE
-    }
-}
-
 Write-Host "Dawert direct play launcher"
 Write-Host "==========================="
 Write-Host "Normal play bypasses Launcher.exe so it cannot overwrite localized archives."
 Write-Host ""
-
-$Python = Find-Python
-if ($null -eq $Python) {
-    Write-Host "Python 3 is required. Run setup-windows.bat first."
-    Read-Host "Press Enter to close"
-    exit 1
-}
 
 $GameDir = Find-GameDir
 if (-not $GameDir) {
     $GameDir = Read-Host "Hellgate London folder containing Data"
 }
 if (-not (Test-GameDir $GameDir)) {
-    Write-Host "Invalid game folder or missing MP_x64\London2038_dx9_x64.exe:"
+    Write-Host "Invalid game folder or missing Launcher.exe / London2038 DX9 executable:"
     Write-Host "  $GameDir"
     Read-Host "Press Enter to close"
     exit 1
@@ -101,63 +99,30 @@ if (-not (Test-GameDir $GameDir)) {
 
 $SavedLanguage = Get-SavedLanguage
 if ([string]::IsNullOrWhiteSpace($SavedLanguage)) {
-    do {
-        $Language = Read-Host "Language to apply before launch"
-    } while ([string]::IsNullOrWhiteSpace($Language))
-} else {
-    $Language = Read-Host "Language to apply before launch [$SavedLanguage]"
-    if ([string]::IsNullOrWhiteSpace($Language)) {
-        $Language = $SavedLanguage
+    $SavedLanguage = Get-InstalledLanguage $GameDir
+    if (-not [string]::IsNullOrWhiteSpace($SavedLanguage)) {
+        Write-Host "Found installed language from game data: $SavedLanguage"
     }
 }
-Save-Language $Language
-
-Write-Host ""
-Write-Host "Mode:"
-Write-Host "  1. Play now - repack language and start game directly"
-Write-Host "  2. Official checksum update - verify/download official files, then repack again"
-$Mode = Read-Host "Choose [1]"
-if ([string]::IsNullOrWhiteSpace($Mode)) {
-    $Mode = "1"
+if ([string]::IsNullOrWhiteSpace($SavedLanguage)) {
+    Write-Host "No installed language is saved for direct play."
+    Write-Host "Install a language first with start-windows.bat or the repacker menu."
+    Read-Host "Press Enter to close"
+    exit 1
 }
+$Language = $SavedLanguage
+Save-Settings $Language
 
-if ($Mode -eq "2") {
-    Write-Host ""
-    Write-Host "Running official checksum updater..."
-    Run-Python $Python @(
-        (Join-Path $ScriptDir "repacker.py"),
-        "--game-dir", $GameDir,
-        "--action", "checksum-update",
-        "--language", $Language,
-        "--quiet-decrypt-log"
-    )
-
-    $Continue = Read-Host "Start the game directly now? [Y/n]"
-    if ($Continue -match "^[Nn]") {
-        Write-Host "Done. Run play-windows.bat when you want to play with translation."
-        Read-Host "Press Enter to close"
-        exit 0
-    }
-    $SkipRepack = $true
+$Exe = Find-GameExe $GameDir
+if (-not $Exe) {
+    Write-Host "No London2038 game executable found."
+    Read-Host "Press Enter to close"
+    exit 1
 }
-
-if (-not $SkipRepack) {
-    Write-Host ""
-    Write-Host "Applying language repack: $Language"
-    Run-Python $Python @(
-        (Join-Path $ScriptDir "repacker.py"),
-        "--game-dir", $GameDir,
-        "--language", $Language,
-        "--exclude", "none",
-        "--quiet-decrypt-log"
-    )
-}
-
-$Exe = Join-Path $GameDir "MP_x64\London2038_dx9_x64.exe"
 $WorkDir = Split-Path -Parent $Exe
 Write-Host ""
 Write-Host "Starting game directly:"
 Write-Host "  $Exe"
 Start-Process -FilePath $Exe -WorkingDirectory $WorkDir
-Write-Host "Done. If you need official updates, run update-windows.bat or choose mode 2 here."
+Write-Host "Done. If you need official updates, run update-windows.bat or menu option 12."
 Read-Host "Press Enter to close"

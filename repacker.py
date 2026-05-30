@@ -33,14 +33,58 @@ TARGET_LANGUAGE_DIR = "english"
 DEFAULT_EXCLUDES: set[str] = set()
 FONT_ARCHIVE_BASE = "hellgate000"
 REPACKER_DIR_NAME = "dawertrepacker"
+CHECKIN_DIR_NAME = "checkin"
 LANGUAGE_DAT_TEXT = "Language=English"
 DETAILED_DECRYPT_LOG = False
 DEFAULT_CSV_NAME = "hellgate-english-strings.csv"
 LONDON2038_CSV_NAME = "london2038-english-strings.csv"
 LONDON2038_UNTRANSLATED_CSV_NAME = "london2038-untranslated-english-strings.csv"
 CSV_FIELDS = ("Archive", "Table", "StringID", "English", "Translation", "Directory", "Attributes")
+VERIFY_FIELDS = (
+    "Archive",
+    "Table",
+    "StringID",
+    "Status",
+    "OriginalEnglish",
+    "InstalledText",
+    "ExpectedTranslation",
+    "SourceType",
+    "SourceArchive",
+    "SourceDirectory",
+    "Directory",
+    "Attributes",
+)
+CHECKIN_FIELDS = ("Archive", "Table", "StringID", "Text", "Directory", "Attributes")
 PATCHER_XML = "Patcher.xml"
 CHECKSUMS_XML = "checksums.xml"
+PATCH_ARCHIVE_HINTS = (
+    (
+        "base localized archive",
+        ("hellgate_localized000.dat", "hellgate_localized000.idx"),
+        "original Hellgate London installer",
+    ),
+    (
+        "SP 1.2 localized archive",
+        (
+            "sp_hellgate_localized_1.10.180.3416_1.18074.70.4256.dat",
+            "sp_hellgate_localized_1.10.180.3416_1.18074.70.4256.idx",
+        ),
+        "Patch_NA_Europe_Germany_SP_1.2_(1.18074.70.4256).exe",
+    ),
+    (
+        "MP 2.0 localized archive",
+        (
+            "mp_hellgate_localized_1.10.180.3416_1.0.86.4580.dat",
+            "mp_hellgate_localized_1.10.180.3416_1.0.86.4580.idx",
+        ),
+        "Patch_NA_Europe_Germany_MP_2.0_(1.0.86.4580).exe",
+    ),
+    (
+        "London2038 localized archive",
+        ("mp_hellgate_localized_2038.dat", "mp_hellgate_localized_2038.idx"),
+        "London2038 launcher/update",
+    ),
+)
 FONT_ATLAS_TARGET = r"data\uix\xml\fonts_atlas.xml"
 FONT_ATLAS_BY_LANGUAGE = {
     "czech": r"data\uix\xml\czech_fonts_atlas.xml",
@@ -144,6 +188,7 @@ UI = {
         "menu_install": "Install",
         "menu_csv": "Manual CSV Translation",
         "menu_maintenance": "Maintenance",
+        "menu_debugging": "Debugging",
         "menu_1": "Install language, normal mode + real font fix + loading tips",
         "menu_2": "Custom install, toggle what NOT to translate",
         "menu_3": "Install language with ASCII/font-safe fallback",
@@ -152,7 +197,7 @@ UI = {
         "menu_6": "Export every English string",
         "menu_7": "Import translated CSV",
         "menu_8": "List available source languages",
-        "menu_9": "Restore original files",
+        "menu_9": "Remove all repacker translations",
         "menu_10": "Dry run normal install",
         "menu_0": "Exit",
         "choose_action": "Choose action",
@@ -189,6 +234,7 @@ UI = {
         "menu_install": "Instalace",
         "menu_csv": "Rucni CSV preklady",
         "menu_maintenance": "Udrzba",
+        "menu_debugging": "Debugging",
         "menu_1": "Instalovat jazyk normalne + oprava fontu + loading tips",
         "menu_2": "Vlastni instalace, vyber co NEprekladat",
         "menu_3": "Instalovat jazyk s ASCII/font-safe fallbackem",
@@ -197,7 +243,7 @@ UI = {
         "menu_6": "Exportovat vsechny anglicke texty",
         "menu_7": "Importovat prelozene CSV",
         "menu_8": "Vypsat dostupne zdrojove jazyky",
-        "menu_9": "Obnovit originalni soubory",
+        "menu_9": "Odebrat vsechny preklady z repackeru",
         "menu_10": "Dry run normalni instalace",
         "menu_0": "Konec",
         "choose_action": "Vyber akci",
@@ -234,6 +280,7 @@ UI = {
         "menu_install": "Установка",
         "menu_csv": "Ручной CSV перевод",
         "menu_maintenance": "Обслуживание",
+        "menu_debugging": "Отладка",
         "menu_1": "Установить язык: обычный режим + исправление шрифта + loading tips",
         "menu_2": "Выборочная установка: выбрать, что НЕ переводить",
         "menu_3": "Установить язык с ASCII/font-safe fallback",
@@ -242,7 +289,7 @@ UI = {
         "menu_6": "Экспортировать все английские строки",
         "menu_7": "Импортировать переведенный CSV",
         "menu_8": "Показать доступные исходные языки",
-        "menu_9": "Восстановить оригинальные файлы",
+        "menu_9": "Удалить все переводы repacker",
         "menu_10": "Dry run обычной установки",
         "menu_0": "Выход",
         "choose_action": "Выберите действие",
@@ -279,6 +326,7 @@ UI = {
         "menu_install": "Instalacja",
         "menu_csv": "Ręczne tłumaczenie CSV",
         "menu_maintenance": "Utrzymanie",
+        "menu_debugging": "Debugowanie",
         "menu_1": "Zainstaluj język: normalnie + naprawa fontu + loading tips",
         "menu_2": "Instalacja własna: wybierz, czego NIE tłumaczyć",
         "menu_3": "Zainstaluj język z ASCII/font-safe fallback",
@@ -287,7 +335,7 @@ UI = {
         "menu_6": "Eksportuj wszystkie angielskie teksty",
         "menu_7": "Importuj przetłumaczony CSV",
         "menu_8": "Pokaż dostępne języki źródłowe",
-        "menu_9": "Przywróć oryginalne pliki",
+        "menu_9": "Usuń wszystkie tłumaczenia repackera",
         "menu_10": "Dry run normalnej instalacji",
         "menu_0": "Wyjście",
         "choose_action": "Wybierz akcję",
@@ -324,6 +372,7 @@ UI = {
         "menu_install": "Telepítés",
         "menu_csv": "Kézi CSV fordítás",
         "menu_maintenance": "Karbantartás",
+        "menu_debugging": "Hibakereses",
         "menu_1": "Nyelv telepítése: normál mód + font javítás + loading tips",
         "menu_2": "Egyéni telepítés: válaszd ki, mit NE fordítson",
         "menu_3": "Nyelv telepítése ASCII/font-safe fallback móddal",
@@ -332,7 +381,7 @@ UI = {
         "menu_6": "Minden angol szöveg exportálása",
         "menu_7": "Lefordított CSV importálása",
         "menu_8": "Elérhető forrásnyelvek listája",
-        "menu_9": "Eredeti fájlok visszaállítása",
+        "menu_9": "Repacker fordítások eltávolítása",
         "menu_10": "Normál telepítés dry run",
         "menu_0": "Kilépés",
         "choose_action": "Válassz műveletet",
@@ -369,6 +418,7 @@ UI = {
         "menu_install": "Installazione",
         "menu_csv": "Traduzione CSV manuale",
         "menu_maintenance": "Manutenzione",
+        "menu_debugging": "Debug",
         "menu_1": "Installa lingua: normale + fix font + loading tips",
         "menu_2": "Installazione custom: scegli cosa NON tradurre",
         "menu_3": "Installa lingua con fallback ASCII/font-safe",
@@ -377,7 +427,7 @@ UI = {
         "menu_6": "Esporta tutti i testi inglesi",
         "menu_7": "Importa CSV tradotto",
         "menu_8": "Mostra lingue sorgenti disponibili",
-        "menu_9": "Ripristina file originali",
+        "menu_9": "Rimuovi tutte le traduzioni del repacker",
         "menu_10": "Dry run installazione normale",
         "menu_0": "Esci",
         "choose_action": "Scegli azione",
@@ -414,6 +464,7 @@ UI = {
         "menu_install": "Installation",
         "menu_csv": "Traduction CSV manuelle",
         "menu_maintenance": "Maintenance",
+        "menu_debugging": "Debug",
         "menu_1": "Installer la langue : normal + correction police + loading tips",
         "menu_2": "Installation personnalisée : choisir quoi NE PAS traduire",
         "menu_3": "Installer la langue avec fallback ASCII/font-safe",
@@ -422,7 +473,7 @@ UI = {
         "menu_6": "Exporter tous les textes anglais",
         "menu_7": "Importer le CSV traduit",
         "menu_8": "Lister les langues source disponibles",
-        "menu_9": "Restaurer les fichiers originaux",
+        "menu_9": "Supprimer toutes les traductions du repacker",
         "menu_10": "Dry run installation normale",
         "menu_0": "Quitter",
         "choose_action": "Choisir une action",
@@ -459,6 +510,7 @@ UI = {
         "menu_install": "Instalación",
         "menu_csv": "Traducción CSV manual",
         "menu_maintenance": "Mantenimiento",
+        "menu_debugging": "Depuracion",
         "menu_1": "Instalar idioma: normal + arreglo de fuente + loading tips",
         "menu_2": "Instalación personalizada: elegir qué NO traducir",
         "menu_3": "Instalar idioma con fallback ASCII/font-safe",
@@ -467,7 +519,7 @@ UI = {
         "menu_6": "Exportar todos los textos ingleses",
         "menu_7": "Importar CSV traducido",
         "menu_8": "Listar idiomas fuente disponibles",
-        "menu_9": "Restaurar archivos originales",
+        "menu_9": "Eliminar todas las traducciones del repacker",
         "menu_10": "Dry run instalación normal",
         "menu_0": "Salir",
         "choose_action": "Elegir acción",
@@ -517,6 +569,14 @@ UI["hu"]["menu_12"] = "Hivatalos checksum updater"
 UI["it"]["menu_12"] = "Updater checksum ufficiale"
 UI["fr"]["menu_12"] = "Updater checksum officiel"
 UI["es"]["menu_12"] = "Updater checksum oficial"
+UI["en"]["menu_13"] = "Verify installed translation report"
+UI["cs"]["menu_13"] = "Zkontrolovat nainstalovany preklad"
+UI["ru"]["menu_13"] = "Проверить установленный перевод"
+UI["pl"]["menu_13"] = "Sprawdź zainstalowane tłumaczenie"
+UI["hu"]["menu_13"] = "Telepített fordítás ellenőrzése"
+UI["it"]["menu_13"] = "Verifica traduzione installata"
+UI["fr"]["menu_13"] = "Verifier la traduction installee"
+UI["es"]["menu_13"] = "Verificar traduccion instalada"
 
 
 @dataclass
@@ -769,6 +829,22 @@ class StringRow:
     attrs: list[str]
 
 
+@dataclass
+class Replacement:
+    string_id: str
+    old_text: str
+    new_text: str
+    source: str
+
+
+@dataclass
+class SourceRowInfo:
+    row: StringRow
+    archive_base: str
+    directory: str
+    source_type: str
+
+
 def parse_cooked_strings(data: bytes) -> tuple[int, list[StringRow]]:
     if len(data) < 12 or u32(data, 0) != 0x68667374:
         raise ValueError("Not a cooked string file")
@@ -882,25 +958,35 @@ def font_safe_text(text: str) -> str:
     return "".join(ch for ch in normalized if not unicodedata.combining(ch))
 
 
+def log_text(text: str, limit: int = 180) -> str:
+    text = (text or "").replace("\r", "\\r").replace("\n", "\\n").replace("\t", "\\t")
+    if len(text) > limit:
+        return text[: limit - 3] + "..."
+    return text
+
+
 def merge_strings(
     target_data: bytes,
     source_rows: list[StringRow],
     language_dir: str,
     font_safe: bool,
-) -> tuple[bytes, int, int]:
+) -> tuple[bytes, int, int, list[Replacement]]:
     version, target_rows = parse_cooked_strings(target_data)
     source_by_id = best_source_by_id(source_rows, language_dir)
     changed = 0
+    replacements: list[Replacement] = []
     for row in target_rows:
         source = source_by_id.get(row.string_id)
         if source:
             new_text = font_safe_text(source.text) if font_safe else source.text
             if row.text == new_text:
                 continue
+            old_text = row.text
             row.text = new_text
             # Keep English attributes. The client is still running with Language=English.
             changed += 1
-    return build_cooked_strings(version, target_rows), changed, len(target_rows)
+            replacements.append(Replacement(row.string_id, old_text, new_text, "auto"))
+    return build_cooked_strings(version, target_rows), changed, len(target_rows), replacements
 
 
 def string_entries_by_language(archive: Archive, language_dir: str) -> dict[str, Entry]:
@@ -1012,6 +1098,28 @@ def repacker_root(data_dir: Path) -> Path:
     return data_dir / REPACKER_DIR_NAME
 
 
+def missing_patch_hints(data_dir: Path) -> list[str]:
+    hints: list[str] = []
+    for label, files, patch in PATCH_ARCHIVE_HINTS:
+        missing = [name for name in files if not (data_dir / name).exists()]
+        if missing:
+            hints.append(
+                f"{label} missing ({', '.join(missing)}). Install/download: {patch}"
+            )
+    return hints
+
+
+def print_patch_hints(data_dir: Path) -> None:
+    hints = missing_patch_hints(data_dir)
+    if not hints:
+        print("Patch/archive coverage: OK")
+        return
+    print("Patch/archive coverage warnings:")
+    for hint in hints:
+        print(f"  {hint}")
+    print("  After installing a missing patch, run refresh-backup or checksum-update before repacking again.")
+
+
 class Tee:
     def __init__(self, *streams: object) -> None:
         self.streams = streams
@@ -1064,6 +1172,22 @@ def fix_language_dat(data_dir: Path, reason: str) -> None:
     lang.write_text(LANGUAGE_DAT_TEXT, encoding="ascii")
 
 
+def installed_language_file(data_dir: Path) -> Path:
+    return repacker_root(data_dir) / "installed-language.txt"
+
+
+def save_installed_language(data_dir: Path, language_dir: str) -> None:
+    target = installed_language_file(data_dir)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(f"{language_dir}\n", encoding="utf-8")
+
+
+def clear_installed_language(data_dir: Path) -> None:
+    target = installed_language_file(data_dir)
+    if target.exists():
+        target.unlink()
+
+
 def backup_originals(data_dir: Path, archive_names: list[str]) -> Path:
     backup_dir = repacker_root(data_dir) / "backup" / "original"
     backup_dir.mkdir(parents=True, exist_ok=True)
@@ -1111,6 +1235,7 @@ def restore_originals(game_dir: Path) -> None:
     backup_dir = repacker_root(data_dir) / "backup" / "original"
     if not backup_dir.is_dir():
         raise SystemExit(f"Backup folder not found: {backup_dir}")
+    print("Removing repacker translations and restoring original archives.")
     for file in backup_dir.glob("*.dat"):
         shutil.copy2(file, data_dir / file.name)
     for file in backup_dir.glob("*.idx"):
@@ -1118,6 +1243,7 @@ def restore_originals(game_dir: Path) -> None:
     backup_lang = ensure_language_backup(data_dir)
     shutil.copy2(backup_lang, data_dir / "language.dat")
     fix_language_dat(data_dir, "restore")
+    clear_installed_language(data_dir)
     print(f"Restored original archives from: {backup_dir}")
     print(color_text(tr("done_play"), "green", bold=True))
 
@@ -1355,7 +1481,7 @@ def append_patch_archive(
                 continue
 
             target_plain = read_entry_plain(original_archive.dat_path, entry)
-            merged, changed, total = merge_strings(target_plain, source_rows, language_dir, font_safe)
+            merged, changed, total, replacements = merge_strings(target_plain, source_rows, language_dir, font_safe)
             if changed == 0:
                 changed_log.append(f"UNCHANGED {original_archive.base}:{name} total={total}")
                 continue
@@ -1376,6 +1502,13 @@ def append_patch_archive(
                 f"PATCH {original_archive.base}:{name} changed={changed}/{total} "
                 f"off=0x{off:X} usz={len(merged)} csz={len(compressed)}"
             )
+            for replacement in replacements:
+                changed_log.append(
+                    f"REPLACE {original_archive.base}:{name}:{replacement.string_id} "
+                    f"source={replacement.source} "
+                    f"old={log_text(replacement.old_text)!r} "
+                    f"new={log_text(replacement.new_text)!r}"
+                )
 
     encrypted = crypt_idx(idx, original_archive.crypt, encrypt=True)
     out_idx.write_bytes(encrypted)
@@ -1507,6 +1640,13 @@ def color_text(text: str, color_name: str, bold: bool = False) -> str:
     prefix = ANSI["bold"] if bold else ""
     prefix += ANSI.get(color_name, "")
     return f"{prefix}{text}{ANSI['reset']}"
+
+
+def short_log_text(text: str, limit: int = 96) -> str:
+    text = log_text(text)
+    if len(text) <= limit:
+        return text
+    return text[: limit - 3] + "..."
 
 
 def prompt_script_language() -> None:
@@ -1707,6 +1847,7 @@ def build_install(
     original_archives = discover_archives(original_dir)
     available = discover_languages(original_archives)
     if language_dir not in available:
+        print_patch_hints(data_dir)
         raise SystemExit(
             f"Language '{language_dir}' not found in original archives.\n"
             f"Available: {', '.join(available) or '(none)'}"
@@ -1719,6 +1860,7 @@ def build_install(
     print(f"Real font fix, language atlas patch: {'yes' if patch_fonts else 'no'}")
     print(f"ASCII/font-safe fallback: {'yes' if font_safe else 'no'}")
     print(f"Original backup: {original_dir}")
+    print_patch_hints(data_dir)
 
     per_archive_source: dict[str, dict[str, list[StringRow]]] = {}
     global_source: dict[str, list[StringRow]] = {}
@@ -1766,7 +1908,39 @@ def build_install(
     print(f"Log: {log_file}")
 
     patched_count = sum(1 for line in all_logs if line.startswith("PATCH "))
-    print(f"Patched tables: {patched_count}")
+    replacement_lines = [line for line in all_logs if line.startswith("REPLACE ")]
+    skipped_count = sum(1 for line in all_logs if line.startswith("SKIP "))
+    unchanged_count = sum(1 for line in all_logs if line.startswith("UNCHANGED "))
+    font_patch_count = sum(1 for line in all_logs if line.startswith(f"PATCH {FONT_ARCHIVE_BASE}:"))
+
+    print("\nBuild summary")
+    print("-------------")
+    print(f"  Output folder: {out_dir}")
+    print(f"  Repack log: {log_file}")
+    print(f"  Patched string tables/files: {patched_count}")
+    print(f"  Replaced strings: {len(replacement_lines)}")
+    print(f"  Unchanged tables: {unchanged_count}")
+    print(f"  Skipped tables/files: {skipped_count}")
+    print(f"  Font atlas patches: {font_patch_count}")
+
+    by_archive: dict[str, int] = {}
+    by_table: dict[str, int] = {}
+    for line in replacement_lines:
+        head = line.split(" source=", 1)[0]
+        target = head.removeprefix("REPLACE ")
+        archive, table, _string_id = target.split(":", 2)
+        by_archive[archive] = by_archive.get(archive, 0) + 1
+        by_table[f"{archive}:{table}"] = by_table.get(f"{archive}:{table}", 0) + 1
+
+    if by_archive:
+        print("  Replacements by archive:")
+        for archive, count in sorted(by_archive.items()):
+            print(f"    {archive}: {count}")
+        print("  Top changed tables:")
+        for table, count in sorted(by_table.items(), key=lambda item: item[1], reverse=True)[:12]:
+            print(f"    {table}: {count}")
+    else:
+        print("  Replacements by archive: (none)")
 
     if dry_run:
         print("Dry run requested; not installing files.")
@@ -1779,7 +1953,9 @@ def build_install(
             if file.exists():
                 shutil.copy2(file, data_dir / file.name)
     fix_language_dat(data_dir, "install")
+    save_installed_language(data_dir, language_dir)
     print(f"Installed repack. Previous current files snapshot: {snapshot}")
+    write_translation_verify_report(game_dir, language_dir, excludes, font_safe)
     print(color_text(tr("done_play"), "green", bold=True))
 
 
@@ -1792,6 +1968,242 @@ def clean_original_archives(data_dir: Path, include_fonts: bool = False) -> tupl
         archive_names.append(FONT_ARCHIVE_BASE)
     original_dir = backup_originals(data_dir, archive_names)
     return original_dir, discover_archives(original_dir), archive_names
+
+
+def rows_by_string_id(rows: list[StringRow]) -> dict[str, StringRow]:
+    return {row.string_id: row for row in rows if row.string_id}
+
+
+def is_london2038_archive(base: str) -> bool:
+    return "2038" in base.lower()
+
+
+def write_translation_verify_report(
+    game_dir: Path,
+    language_dir: str,
+    excludes: set[str] | None = None,
+    font_safe: bool = False,
+    stream: bool = True,
+) -> Path:
+    data_dir = game_dir / "Data"
+    stream = stream and os.environ.get("DAWERT_VERIFY_STREAM", "1") != "0"
+    original_dir = repacker_root(data_dir) / "backup" / "original"
+    if not original_dir.is_dir():
+        raise SystemExit(f"Clean original backup not found: {original_dir}")
+
+    excludes = excludes or set()
+    language_dir = normalize_language(language_dir)
+    original_archives = discover_archives(original_dir)
+    current_archives = discover_archives(data_dir)
+    original_by_base = {archive.base: archive for archive in original_archives}
+    source_by_table, source_table_origins = source_row_info_by_table(original_archives, language_dir)
+    reference_by_table, reference_table_origins, reference_dir = reference_row_info_by_table(language_dir)
+
+    report_dir = repacker_root(data_dir) / "reports"
+    report_dir.mkdir(parents=True, exist_ok=True)
+    stamp = _dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    report_path = report_dir / f"verify-{language_dir}-{stamp}.csv"
+    detail_log_path = report_dir / f"verify-{language_dir}-{stamp}.log"
+
+    stats = {
+        "translated": 0,
+        "missing": 0,
+        "different": 0,
+        "source-missing": 0,
+        "source-same": 0,
+        "excluded": 0,
+        "london2038-untranslated": 0,
+        "checked": 0,
+    }
+    issue_examples: list[dict[str, str]] = []
+
+    with report_path.open("w", newline="", encoding="utf-8-sig") as fh, detail_log_path.open(
+        "w",
+        encoding="utf-8",
+    ) as detail_fh:
+        writer = csv.DictWriter(fh, fieldnames=VERIFY_FIELDS)
+        writer.writeheader()
+        detail_fh.write(f"Verification detail log for {language_dir}\n")
+        detail_fh.write(f"CSV report: {report_path}\n")
+        detail_fh.write(f"Game Data: {data_dir}\n")
+        detail_fh.write(f"Clean original backup: {original_dir}\n")
+        detail_fh.write(f"Reference translations: {reference_dir or '(not found)'}\n\n")
+        for current_archive in current_archives:
+            original_archive = original_by_base.get(current_archive.base)
+            if not original_archive:
+                continue
+            original_entries = string_entries_by_language(original_archive, TARGET_LANGUAGE_DIR)
+            current_entries = string_entries_by_language(current_archive, TARGET_LANGUAGE_DIR)
+            for table, current_entry in sorted(current_entries.items()):
+                original_entry = original_entries.get(table)
+                if not original_entry:
+                    continue
+                try:
+                    _, current_rows = parse_cooked_strings(read_entry_plain(current_archive.dat_path, current_entry))
+                    _, original_rows = parse_cooked_strings(read_entry_plain(original_archive.dat_path, original_entry))
+                except Exception as exc:
+                    print(f"WARN verify skipped {current_archive.base}:{table}: {exc}")
+                    continue
+
+                original_by_id = rows_by_string_id(original_rows)
+                expected_by_id = source_by_table.get(table, {})
+                reference_expected_by_id = reference_by_table.get(table, {})
+                for row in current_rows:
+                    if not row.string_id:
+                        continue
+                    original_row = original_by_id.get(row.string_id)
+                    original_text = original_row.text if original_row else ""
+                    source_info = reference_expected_by_id.get(row.string_id) or expected_by_id.get(row.string_id)
+                    source_row = source_info.row if source_info else None
+                    expected = source_row.text if source_row else ""
+                    if expected and font_safe:
+                        expected = font_safe_text(expected)
+                    source_archive = source_info.archive_base if source_info else ""
+                    source_directory = source_info.directory if source_info else ""
+                    if not source_info and table in source_table_origins:
+                        source_archive, source_directory = source_table_origins[table]
+                    if not source_info and table in reference_table_origins:
+                        source_archive, source_directory = reference_table_origins[table]
+                    source_type = source_info.source_type if source_info else "not-found"
+
+                    is_l2038 = is_london2038_archive(current_archive.base)
+                    if table in excludes:
+                        status = "excluded"
+                    elif is_l2038 and (not source_row or not expected):
+                        status = "london2038-untranslated"
+                    elif not source_row or not expected:
+                        status = "source-missing"
+                    elif expected == original_text:
+                        status = "source-same"
+                    elif row.text == expected:
+                        status = "translated"
+                    elif row.text == original_text:
+                        status = "missing"
+                    else:
+                        status = "different"
+
+                    stats[status] = stats.get(status, 0) + 1
+                    if status != "london2038-untranslated":
+                        stats["checked"] += 1
+                    if status in ("missing", "different", "source-missing") and len(issue_examples) < 40:
+                        issue_examples.append(
+                            {
+                                "status": status,
+                                "archive": current_archive.base,
+                                "table": table,
+                                "string_id": row.string_id,
+                                "original_text": original_text,
+                                "installed_text": row.text or "",
+                                "expected": expected,
+                                "current_archive_files": f"{current_archive.base}.dat / {current_archive.base}.idx",
+                                "original_archive_files": f"{original_archive.base}.dat / {original_archive.base}.idx",
+                                "source_archive_files": (
+                                    f"{source_archive}.dat / {source_archive}.idx" if source_archive else "(not found)"
+                                ),
+                                "source_directory": source_directory or "(not found)",
+                                "source_type": source_type,
+                            }
+                        )
+
+                    if status == "translated":
+                        line = (
+                            f"[OK] translated {current_archive.base}:{table}:{row.string_id} "
+                            f"source={source_type}:{source_archive or '(not found)'} "
+                            f"folder={source_directory or '(not found)'} "
+                            f"text={short_log_text(row.text or '')}"
+                        )
+                        detail_fh.write(line + "\n")
+                    elif status in ("missing", "different", "source-missing"):
+                        line = (
+                            f"[NOK] status={status} {current_archive.base}:{table}:{row.string_id} "
+                            f"source={source_type}:{source_archive or '(not found)'} "
+                            f"folder={source_directory or '(not found)'} "
+                            f"english={short_log_text(original_text)} "
+                            f"expected={short_log_text(expected)} "
+                            f"installed={short_log_text(row.text or '')}"
+                        )
+                        detail_fh.write(line + "\n")
+                    else:
+                        line = ""
+
+                    if stream and line:
+                        if status == "translated":
+                            print(color_text(line, "green"))
+                        else:
+                            print(color_text(line, "yellow" if status == "missing" else "red"))
+                        time.sleep(0.0005)
+
+                    writer.writerow(
+                        {
+                            "Archive": current_archive.base,
+                            "Table": table,
+                            "StringID": row.string_id,
+                            "Status": status,
+                            "OriginalEnglish": original_text,
+                            "InstalledText": row.text or "",
+                            "ExpectedTranslation": expected,
+                            "SourceType": source_type,
+                            "SourceArchive": source_archive,
+                            "SourceDirectory": source_directory,
+                            "Directory": current_entry.directory,
+                            "Attributes": "|".join(row.attrs),
+                        }
+                    )
+
+    print("\nFinal install verification")
+    print("--------------------------")
+    print(f"  Report: {report_path}")
+    print(f"  Detail log: {detail_log_path}")
+    print(f"  Game Data: {data_dir}")
+    print(f"  Clean original backup: {original_dir}")
+    print(f"  Compared source language: {language_dir}")
+    print(f"  Reference translations: {reference_dir or '(not found)'}")
+    print(f"  Checked rows: {stats['checked']}")
+    print(color_text(f"  OK translated: {stats['translated']}", "green", bold=True))
+    print(f"  Missing: {stats['missing']}")
+    print(f"  Different: {stats['different']}")
+    print(f"  Source missing: {stats['source-missing']}")
+    print(f"  Source same as English: {stats['source-same']}")
+    print(f"  London2038 untranslated ignored: {stats['london2038-untranslated']}")
+
+    total_attention = stats["missing"] + stats["different"] + stats["source-missing"]
+    if total_attention:
+        print(f"  Needs attention: {total_attention}")
+    else:
+        print("  Needs attention: 0")
+
+    if stats["source-missing"]:
+        print_patch_hints(data_dir)
+
+    if issue_examples:
+        print("\nFirst issues needing attention")
+        print("------------------------------")
+        for item in issue_examples:
+            status = item["status"]
+            print(f"  [{status}] {item['archive']}:{item['table']}:{item['string_id']}")
+            if status == "source-missing":
+                print("    Reason: no source translation exists for this StringID in the selected language.")
+            elif status == "missing":
+                print("    Reason: expected translation exists, but installed text is still English.")
+            elif status == "different":
+                print("    Reason: installed text does not match expected translation.")
+            print(f"    Current archive: {item['current_archive_files']}")
+            print(f"    Original backup: {item['original_archive_files']}")
+            print(f"    Source type:     {item['source_type']}")
+            print(f"    Source archive:  {item['source_archive_files']}")
+            print(f"    Source folder:   {item['source_directory']}")
+            if item["original_text"]:
+                print(f"    English:         {log_text(item['original_text'])}")
+            if item["expected"]:
+                print(f"    Expected:        {log_text(item['expected'])}")
+            if item["installed_text"]:
+                print(f"    Installed:       {log_text(item['installed_text'])}")
+        print(f"\nFull issue list: {report_path}")
+        print(f"Per-string [OK]/[NOK] log: {detail_log_path}")
+    else:
+        print("\nNo missing or mismatched translated rows were found.")
+        print(f"Per-string [OK] log: {detail_log_path}")
+    return report_path
 
 
 def resolve_csv_path(game_dir: Path, value: str | None, default_name: str = DEFAULT_CSV_NAME) -> Path:
@@ -1839,6 +2251,79 @@ def source_rows_by_table(
             best_rows[table] = best_source_by_id(rows, language_dir)
             best_counts[table] = len(rows)
     return best_rows
+
+
+def source_row_info_by_table(
+    archives: list[Archive],
+    language_dir: str,
+) -> tuple[dict[str, dict[str, SourceRowInfo]], dict[str, tuple[str, str]]]:
+    best_rows: dict[str, dict[str, SourceRowInfo]] = {}
+    best_counts: dict[str, int] = {}
+    table_sources: dict[str, tuple[str, str]] = {}
+
+    for archive in archives:
+        for table, entry in string_entries_by_language(archive, language_dir).items():
+            try:
+                _, rows = parse_cooked_strings(read_entry_plain(archive.dat_path, entry))
+            except Exception as exc:
+                print(f"WARN source parse failed {archive.base}:{table}: {exc}")
+                continue
+            if len(rows) <= best_counts.get(table, -1):
+                continue
+            table_sources[table] = (archive.base, entry.directory)
+            best_rows[table] = {
+                string_id: SourceRowInfo(row, archive.base, entry.directory, "game-source")
+                for string_id, row in best_source_by_id(rows, language_dir).items()
+            }
+            best_counts[table] = len(rows)
+
+    return best_rows, table_sources
+
+
+def checkin_reference_path(language_dir: str) -> Path | None:
+    script_dir = Path(__file__).resolve().parent
+    checkin_dir = script_dir / CHECKIN_DIR_NAME
+    candidates = (
+        checkin_dir / f"{language_dir}.csv",
+        checkin_dir / f"{language_dir.lower()}.csv",
+    )
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def load_checkin_reference(
+    language_dir: str,
+) -> tuple[dict[str, dict[str, SourceRowInfo]], dict[str, tuple[str, str]], Path | None]:
+    csv_path = checkin_reference_path(language_dir)
+    if not csv_path:
+        return {}, {}, None
+
+    best_rows: dict[str, dict[str, SourceRowInfo]] = {}
+    table_sources: dict[str, tuple[str, str]] = {}
+    with csv_path.open("r", newline="", encoding="utf-8-sig") as fh:
+        reader = csv.DictReader(fh)
+        for raw in reader:
+            archive = csv_get(raw, "Archive").strip()
+            table = csv_get(raw, "Table").strip()
+            string_id = csv_get(raw, "StringID").strip()
+            text = csv_get(raw, "Text")
+            directory = csv_get(raw, "Directory")
+            attrs_text = csv_get(raw, "Attributes")
+            if not table or not string_id or not text:
+                continue
+            attrs = [item for item in attrs_text.split("|") if item]
+            row = StringRow(0, 0, string_id, 0, text, attrs)
+            best_rows.setdefault(table, {})[string_id] = SourceRowInfo(row, archive, directory, "checkin")
+            table_sources.setdefault(table, (archive, directory))
+    return best_rows, table_sources, csv_path
+
+
+def reference_row_info_by_table(
+    language_dir: str,
+) -> tuple[dict[str, dict[str, SourceRowInfo]], dict[str, tuple[str, str]], Path | None]:
+    return load_checkin_reference(language_dir)
 
 
 def row_is_untranslated_by_language(
@@ -1946,18 +2431,21 @@ def merge_strings_from_csv(
     target_data: bytes,
     by_archive: dict[tuple[str, str, str], str],
     by_table: dict[tuple[str, str], str],
-) -> tuple[bytes, int, int]:
+) -> tuple[bytes, int, int, list[Replacement]]:
     version, rows = parse_cooked_strings(target_data)
     changed = 0
+    replacements: list[Replacement] = []
     for row in rows:
         translation = by_archive.get((archive_base, table, row.string_id))
         if translation is None:
             translation = by_table.get((table, row.string_id))
         if translation is None or row.text == translation:
             continue
+        old_text = row.text
         row.text = translation
         changed += 1
-    return build_cooked_strings(version, rows), changed, len(rows)
+        replacements.append(Replacement(row.string_id, old_text, translation, "csv"))
+    return build_cooked_strings(version, rows), changed, len(rows), replacements
 
 
 def apply_csv_to_cooked_data(
@@ -1966,7 +2454,7 @@ def apply_csv_to_cooked_data(
     target_data: bytes,
     by_archive: dict[tuple[str, str, str], str],
     by_table: dict[tuple[str, str], str],
-) -> tuple[bytes, int, int]:
+) -> tuple[bytes, int, int, list[Replacement]]:
     return merge_strings_from_csv(archive_base, table, target_data, by_archive, by_table)
 
 
@@ -1996,18 +2484,26 @@ def append_patch_archive_from_csv(
 
             working = read_entry_plain(original_archive.dat_path, entry)
             base_changed = 0
+            replacements: list[Replacement] = []
             if language_dir:
                 source_rows = (source_same_archive or {}).get(table) or (global_source or {}).get(table)
                 if source_rows:
-                    working, base_changed, total = merge_strings(working, source_rows, language_dir, font_safe)
+                    working, base_changed, total, base_replacements = merge_strings(
+                        working,
+                        source_rows,
+                        language_dir,
+                        font_safe,
+                    )
+                    replacements.extend(base_replacements)
 
-            merged, csv_changed, total = apply_csv_to_cooked_data(
+            merged, csv_changed, total, csv_replacements = apply_csv_to_cooked_data(
                 original_archive.base,
                 table,
                 working,
                 by_archive,
                 by_table,
             )
+            replacements.extend(csv_replacements)
             changed = base_changed + csv_changed
             if changed == 0:
                 changed_log.append(f"UNCHANGED {original_archive.base}:{table} total={total}")
@@ -2030,6 +2526,13 @@ def append_patch_archive_from_csv(
                 f"base={base_changed} csv={csv_changed} "
                 f"off=0x{off:X} usz={len(merged)} csz={len(compressed)}"
             )
+            for replacement in replacements:
+                changed_log.append(
+                    f"REPLACE {original_archive.base}:{table}:{replacement.string_id} "
+                    f"source={replacement.source} "
+                    f"old={log_text(replacement.old_text)!r} "
+                    f"new={log_text(replacement.new_text)!r}"
+                )
 
     out_idx.write_bytes(crypt_idx(idx, original_archive.crypt, encrypt=True))
     return out_dat, out_idx, changed_log
@@ -2055,6 +2558,7 @@ def import_csv_translations(
         base_language = normalize_language(base_language)
         available = discover_languages(original_archives)
         if base_language not in available:
+            print_patch_hints(data_dir)
             raise SystemExit(
                 f"Language '{base_language}' not found in original archives.\n"
                 f"Available: {', '.join(available) or '(none)'}"
@@ -2092,6 +2596,7 @@ def import_csv_translations(
     print(f"Excluding: {', '.join(sorted(excludes)) or '(nothing)'}")
     print(f"Real font fix, language atlas patch: {patch_font_language or 'no'}")
     print(f"Original backup: {original_dir}")
+    print_patch_hints(data_dir)
 
     all_logs: list[str] = []
     for archive in original_archives:
@@ -2115,7 +2620,15 @@ def import_csv_translations(
     log_file.write_text("\n".join(all_logs) + "\n", encoding="utf-8")
     print(f"Built CSV import repack: {out_dir}")
     print(f"Log: {log_file}")
+    replacement_lines = [line for line in all_logs if line.startswith("REPLACE ")]
     print(f"Patched tables: {sum(1 for line in all_logs if line.startswith('PATCH '))}")
+    print("Replacement details:")
+    if replacement_lines:
+        for line in replacement_lines:
+            print(line)
+    else:
+        print("  (none)")
+    print(f"Total replaced translations: {len(replacement_lines)}")
 
     if dry_run:
         print("Dry run requested; not installing files.")
@@ -2128,7 +2641,11 @@ def import_csv_translations(
             if file.exists():
                 shutil.copy2(file, data_dir / file.name)
     fix_language_dat(data_dir, "csv-import")
+    if base_language:
+        save_installed_language(data_dir, base_language)
     print(f"Installed CSV import. Previous current files snapshot: {snapshot}")
+    if base_language:
+        write_translation_verify_report(game_dir, base_language, excludes, font_safe)
     print(color_text(tr("done_play"), "green", bold=True))
 
 
@@ -2147,14 +2664,16 @@ def interactive_args() -> argparse.Namespace:
     print(f"  5. {tr('menu_5')}")
     print(f"  6. {tr('menu_6')}")
     print(f"  7. {tr('menu_7')}")
-    print(color_text(f"\n== {tr('menu_maintenance')} ==", "yellow", bold=True))
-    print(f"  8. {tr('menu_8')}")
+    print(color_text(f"\n== {tr('menu_debugging')} ==", "yellow", bold=True))
     print(f"  9. {tr('menu_9')}")
+    print(f"  13. {tr('menu_13')}")
+    print(color_text(f"\n== {tr('menu_maintenance')} ==", "blue", bold=True))
+    print(f"  8. {tr('menu_8')}")
     print(f"  10. {tr('menu_10')}")
     print(f"  11. {tr('menu_11')}")
     print(f"  12. {tr('menu_12')}")
     print(f"  0. {tr('menu_0')}")
-    choice = prompt_number(tr("choose_action"), 0, 12, 1)
+    choice = prompt_number(tr("choose_action"), 0, 13, 1)
     if choice == 0:
         raise SystemExit(0)
 
@@ -2197,6 +2716,9 @@ def interactive_args() -> argparse.Namespace:
     elif choice == 12:
         action = "checksum-update"
         language = prompt_language(game)
+    elif choice == 13:
+        action = "verify-install"
+        language = prompt_language(game)
     else:
         language = prompt_language(game)
         if choice == 2:
@@ -2233,7 +2755,17 @@ def main() -> int:
     parser.add_argument("--language", help="Source language to merge into English")
     parser.add_argument(
         "--action",
-        choices=("install", "list", "restore", "refresh-backup", "checksum-update", "export-csv", "import-csv"),
+        choices=(
+            "install",
+            "list",
+            "restore",
+            "remove-translations",
+            "refresh-backup",
+            "checksum-update",
+            "verify-install",
+            "export-csv",
+            "import-csv",
+        ),
         default="install",
     )
     parser.add_argument("--dry-run", action="store_true", help="Build output but do not install")
@@ -2291,7 +2823,7 @@ def main() -> int:
     print(f"Game directory: {game_dir}")
     print(f"Repacker data: {repacker_root(data_dir)}")
 
-    if args.action == "restore":
+    if args.action in ("restore", "remove-translations"):
         restore_originals(game_dir)
         return 0
 
@@ -2301,6 +2833,17 @@ def main() -> int:
 
     if args.action == "checksum-update":
         checksum_update(game_dir, args.language)
+        return 0
+
+    if args.action == "verify-install":
+        if not args.language:
+            raise SystemExit("--language is required for verify-install")
+        write_translation_verify_report(
+            game_dir,
+            normalize_language(args.language),
+            parse_excludes(args.exclude),
+            args.font_safe,
+        )
         return 0
 
     if args.action == "export-csv":

@@ -78,9 +78,12 @@ The launcher opens a numbered menu with the DAWERT banner. You can choose:
 6. Export every English string
 7. Import translated CSV
 
+== Debugging ==
+9. Remove all repacker translations
+13. Verify installed translation report
+
 == Maintenance ==
 8. List languages
-9. Restore originals
 10. Dry run normal install
 11. Refresh clean backup after official launcher update
 12. Official checksum updater
@@ -166,24 +169,117 @@ chmod +x play-linux.sh
 ./play-linux.sh
 ```
 
-The direct play launcher has two modes:
+The direct play launcher is play-only. It does not repack, checksum-update, or
+download language files every time you start the game. It reads the installed
+language from:
 
 ```text
-1. Play now
-2. Official checksum update
+Data\dawertrepacker\installed-language.txt
 ```
 
-Mode 1 applies the selected language repack, then starts:
+or from its saved launcher config:
+
+```text
+dawert-launcher.conf
+```
+
+If no installed language is found, it stops and tells you to install a language
+first through `start-linux.sh`, `start-windows.bat`, or the installer language
+menu. For official file repair/update, use `update-linux.sh`, `update-windows.bat`,
+or menu option 12 instead of the play launcher.
+
+Normal play starts:
 
 ```text
 MP_x64\London2038_dx9_x64.exe
 ```
 
-Mode 2 is for official updates or repair. It reads `Patcher.xml`, downloads the
-latest `checksums.xml` from the official `RemoteDirectory`, verifies MD5/size,
-downloads changed official files from that same server, refreshes the clean
-backup, then applies the selected language again. This avoids the launcher
-refusing modified data while still keeping translated files for play.
+DX9 is the only Linux launcher path. DX10 is intentionally not offered because
+current Wine builds crash in Hellgate/London2038 DX10 effects parsing.
+
+After language install, the repacker prints a build summary with patched files,
+changed string counts, font atlas status, archive totals, and top changed
+tables. Then it runs install verification and writes a CSV report under:
+
+```text
+Data\dawertrepacker\reports
+```
+
+The verification report shows translated, missing, different, source-missing,
+source-same, and London2038-only untranslated rows so two installs can be
+compared directly. London2038-only rows without source translation are written
+to the CSV as `london2038-untranslated`, but they are ignored in the missing
+and source-missing totals.
+
+The final verification output also prints the current archive, original backup
+archive, source archive, source language folder, reason, English text, expected
+translation, and installed text for the first visible issues. The CSV contains
+the full list.
+
+## Checkin Reference CSV
+
+The folder:
+
+```text
+checkin/
+```
+
+contains one compact CSV reference per language:
+
+```text
+checkin/czech.csv
+checkin/french.csv
+checkin/hungarian.csv
+checkin/italian.csv
+checkin/polish.csv
+checkin/russian.csv
+checkin/spanish.csv
+```
+
+These files replace the old `Translations/<language>/...dat/.idx` reference
+folders. The CSV format is much smaller, easier to diff, and easier to inspect
+in a text editor or spreadsheet.
+
+Checkin CSV columns:
+
+```text
+Archive, Table, StringID, Text, Directory, Attributes
+```
+
+During verification, if `checkin/<language>.csv` exists next to `repacker.py`,
+the repacker uses it as the trusted reference for expected translations. If a
+row is not found there, it falls back to the source language tables from the
+clean game archives. Every checked translated/missing row is written to:
+
+```text
+Data\dawertrepacker\reports\verify-<language>-<timestamp>.log
+```
+
+During install and verify, the console also streams every checked row:
+
+```text
+[OK] translated ...
+[NOK] status=different ...
+```
+
+`[OK]` is green, `[NOK]` is red/yellow depending on the problem. The stream is
+intentionally line-by-line with a short delay, so the console shows real
+progress instead of dumping the whole report at once. To suppress the stream
+and keep only the CSV/log files:
+
+```bash
+DAWERT_VERIFY_STREAM=0 python3 repacker.py --auto-find --action verify-install --language <language>
+```
+
+If a source archive is missing, the repacker prints which patch/update likely
+needs to be installed, for example SP 1.2, MP 2.0, or the London2038 updater.
+
+The checksum updater is for official updates or repair. It reads `Patcher.xml`,
+downloads the latest `checksums.xml` from the official `RemoteDirectory`,
+verifies MD5/size, downloads changed official files from that same server,
+refreshes the clean backup, then applies the selected language again. This
+avoids the launcher refusing modified data while still keeping translated files
+for play.
 
 You can also run the updater directly:
 
@@ -206,13 +302,16 @@ Direct CLI:
 python3 repacker.py --auto-find --action checksum-update --language <language>
 ```
 
-The play and update launchers remember the last selected language in:
+The update launcher remembers the last selected language in:
 
 ```text
 dawert-launcher.conf
 ```
 
-Next time, pressing Enter uses that saved language.
+On Linux, `play-linux.sh` is play-only. It uses the already installed/saved
+language and starts the game directly; it does not reinstall or download the
+language again on every launch. If no language has been installed yet, it tells
+you to install one through `start-linux.sh` or the installer language menu.
 
 On Linux, `play-linux.sh` also remembers launch mode. If the game appears on
 the taskbar but does not open, use the Wine virtual desktop mode. That mode is
@@ -227,7 +326,8 @@ the default until you choose normal Wine fullscreen/window mode.
   - `export-csv`: export every English string row to CSV.
   - `import-csv`: import filled CSV translations by `StringID`.
   - `list`: show available source languages found in the archives.
-  - `restore`: restore original localized archives from backup.
+  - `remove-translations`: remove all translations created by the repacker and restore original localized archives from backup.
+  - `restore`: same restore operation, kept as a shorter alias.
   - `refresh-backup`: refresh the clean backup after an official launcher update.
   - `checksum-update`: verify/download official files from the London2038 checksum manifest, refresh backup, then optionally reinstall language.
 - `Source language`: language folder to merge into English, for example:
@@ -409,10 +509,10 @@ Data/language.dat = Language=English
 This is intentional for London2038 stability and avoids the `missing string`
 state caused by running the client as `Language=Czech`, `Language=Polish`, etc.
 
-To restore the original localized archives:
+To remove all repacker-created translations and restore the original localized archives:
 
 ```bash
-python3 repacker.py --game-dir "/path/to/Hellgate London" --action restore
+python3 repacker.py --game-dir "/path/to/Hellgate London" --action remove-translations
 ```
 
 The restore also writes:

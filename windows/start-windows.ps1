@@ -1,14 +1,16 @@
 $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$RepackerDir = Split-Path -Parent $ScriptDir
+$Repacker = Join-Path $RepackerDir "repacker.py"
 
 if (Get-Command py -ErrorAction SilentlyContinue) {
-    & py -3 (Join-Path $ScriptDir "repacker.py") --interactive
+    & py -3 $Repacker --interactive
     Read-Host "Press Enter to close"
     exit $LASTEXITCODE
 }
 
 if (Get-Command python -ErrorAction SilentlyContinue) {
-    & python (Join-Path $ScriptDir "repacker.py") --interactive
+    & python $Repacker --interactive
     Read-Host "Press Enter to close"
     exit $LASTEXITCODE
 }

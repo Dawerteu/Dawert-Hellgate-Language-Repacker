@@ -1,17 +1,18 @@
 @echo off
 setlocal
 set "SCRIPT_DIR=%~dp0"
+set "REPACKER=%SCRIPT_DIR%..\repacker.py"
 
 where py >nul 2>nul
 if %ERRORLEVEL%==0 (
-  py -3 "%SCRIPT_DIR%repacker.py" --interactive
+  py -3 "%REPACKER%" --interactive
   pause
   exit /b %ERRORLEVEL%
 )
 
 where python >nul 2>nul
 if %ERRORLEVEL%==0 (
-  python "%SCRIPT_DIR%repacker.py" --interactive
+  python "%REPACKER%" --interactive
   pause
   exit /b %ERRORLEVEL%
 )

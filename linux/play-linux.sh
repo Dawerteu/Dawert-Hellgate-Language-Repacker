@@ -2,6 +2,7 @@
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPACKER_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 CONFIG_FILE="$SCRIPT_DIR/dawert-launcher.conf"
 
 load_saved_language() {
@@ -59,8 +60,7 @@ find_game_dir() {
   local candidates=(
     "${GAME_DIR:-}"
     "${HELLGATE_DIR:-}"
-    "$SCRIPT_DIR/../london2038/wineprefix/drive_c/Program Files/Flagship Studios/Hellgate London"
-    "$SCRIPT_DIR/london2038/wineprefix/drive_c/Program Files/Flagship Studios/Hellgate London"
+    "$REPACKER_DIR/london2038/wineprefix/drive_c/Program Files/Flagship Studios/Hellgate London"
     "$PWD/london2038/wineprefix/drive_c/Program Files/Flagship Studios/Hellgate London"
     "$HOME/.local/share/london2038/wineprefix/drive_c/Program Files/Flagship Studios/Hellgate London"
     "$HOME/.local/share/london2038/wineprefix/drive_c/London2038"
@@ -102,7 +102,7 @@ require_installed_language() {
 
   echo "No installed language is saved for direct play." >&2
   echo "Install a language first with:" >&2
-  echo "  ./start-linux.sh" >&2
+  echo "  ./linux/start-linux.sh" >&2
   echo "or run the installer language menu:" >&2
   echo "  ./install-linux.sh --language-menu" >&2
   exit 1

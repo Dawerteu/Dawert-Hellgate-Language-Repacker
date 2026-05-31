@@ -2,6 +2,7 @@
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPACKER_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 CONFIG_FILE="$SCRIPT_DIR/dawert-launcher.conf"
 
 load_saved_language() {
@@ -39,8 +40,7 @@ find_game_dir() {
   local candidates=(
     "${GAME_DIR:-}"
     "${HELLGATE_DIR:-}"
-    "$SCRIPT_DIR/../london2038/wineprefix/drive_c/Program Files/Flagship Studios/Hellgate London"
-    "$SCRIPT_DIR/london2038/wineprefix/drive_c/Program Files/Flagship Studios/Hellgate London"
+    "$REPACKER_DIR/london2038/wineprefix/drive_c/Program Files/Flagship Studios/Hellgate London"
     "$PWD/london2038/wineprefix/drive_c/Program Files/Flagship Studios/Hellgate London"
     "$HOME/.local/share/london2038/wineprefix/drive_c/Program Files/Flagship Studios/Hellgate London"
     "$HOME/.local/share/london2038/wineprefix/drive_c/London2038"
@@ -62,7 +62,7 @@ echo "This verifies official checksums, downloads official changed files, refres
 echo
 
 PYTHON_BIN="$(find_python)" || {
-  echo "Python 3 is required. Run setup-linux.sh first." >&2
+  echo "Python 3 is required. Run linux/setup-linux.sh first." >&2
   exit 1
 }
 
@@ -91,11 +91,11 @@ save_language "$LANGUAGE_VALUE"
 
 echo
 echo "Running checksum updater..."
-"$PYTHON_BIN" "$SCRIPT_DIR/repacker.py" \
+"$PYTHON_BIN" "$REPACKER_DIR/repacker.py" \
   --game-dir "$GAME_DIR_VALUE" \
   --action checksum-update \
   --language "$LANGUAGE_VALUE" \
   --quiet-decrypt-log
 
 echo
-echo "Done. For normal play, use play-linux.sh."
+echo "Done. For normal play, use linux/play-linux.sh."

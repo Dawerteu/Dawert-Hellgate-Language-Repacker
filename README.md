@@ -14,6 +14,16 @@ It keeps the game runtime language as `English`, then merges another language's 
 
 No external Python packages are required.
 
+## Folder Layout
+
+```text
+repacker.py              shared repacker engine
+checkin/                 compact reference CSV files for verify reports
+troubleshooting/         Windows/Linux troubleshooting docs
+linux/                   Linux/macOS setup, menu, play, and update launchers
+windows/                 Windows setup, menu, play, and update launchers
+```
+
 ## Setup Dependencies
 
 The repacker only needs Python 3.8+ and the Python standard library.
@@ -22,8 +32,8 @@ On Linux/macOS:
 
 ```bash
 cd "dawert-language repacker"
-chmod +x setup-linux.sh
-./setup-linux.sh
+chmod +x linux/*.sh
+./linux/setup-linux.sh
 ```
 
 The setup detects the OS/package manager and installs Python through the system
@@ -34,13 +44,13 @@ On macOS it uses Homebrew if available.
 On Windows, double-click:
 
 ```text
-setup-windows.bat
+windows\setup-windows.bat
 ```
 
 Or run PowerShell:
 
 ```powershell
-.\setup-windows.ps1
+.\windows\setup-windows.ps1
 ```
 
 The Windows setup checks for `py`/`python`, then tries `winget`, then `choco`,
@@ -60,8 +70,8 @@ Russian, Polish, Hungarian, Italian, French, and Spanish.
 
 ```bash
 cd "dawert-language repacker"
-chmod +x start-linux.sh
-./start-linux.sh
+chmod +x linux/*.sh
+./linux/start-linux.sh
 ```
 
 The launcher opens a numbered menu with the DAWERT banner. You can choose:
@@ -125,7 +135,7 @@ Data/language.dat = Language=English
 Double-click:
 
 ```text
-start-windows.bat
+windows\start-windows.bat
 ```
 
 The Windows launcher opens the same numbered menu as Linux.
@@ -133,7 +143,7 @@ The Windows launcher opens the same numbered menu as Linux.
 Or run PowerShell:
 
 ```powershell
-.\start-windows.ps1
+.\windows\start-windows.ps1
 ```
 
 Or direct CLI:
@@ -159,14 +169,14 @@ Use the direct play launcher for normal play:
 Windows:
 
 ```text
-play-windows.bat
+windows\play-windows.bat
 ```
 
 Linux:
 
 ```bash
-chmod +x play-linux.sh
-./play-linux.sh
+chmod +x linux/play-linux.sh
+./linux/play-linux.sh
 ```
 
 The direct play launcher is play-only. It does not repack, checksum-update, or
@@ -180,13 +190,15 @@ Data\dawertrepacker\installed-language.txt
 or from its saved launcher config:
 
 ```text
-dawert-launcher.conf
+linux/dawert-launcher.conf
+windows/dawert-launcher.conf
 ```
 
 If no installed language is found, it stops and tells you to install a language
-first through `start-linux.sh`, `start-windows.bat`, or the installer language
-menu. For official file repair/update, use `update-linux.sh`, `update-windows.bat`,
-or menu option 12 instead of the play launcher.
+first through `linux/start-linux.sh`, `windows/start-windows.bat`, or the
+installer language menu. For official file repair/update, use
+`linux/update-linux.sh`, `windows/update-windows.bat`, or menu option 12
+instead of the play launcher.
 
 Normal play starts:
 
@@ -286,14 +298,14 @@ You can also run the updater directly:
 Windows:
 
 ```text
-update-windows.bat
+windows\update-windows.bat
 ```
 
 Linux:
 
 ```bash
-chmod +x update-linux.sh
-./update-linux.sh
+chmod +x linux/update-linux.sh
+./linux/update-linux.sh
 ```
 
 Direct CLI:
@@ -305,15 +317,16 @@ python3 repacker.py --auto-find --action checksum-update --language <language>
 The update launcher remembers the last selected language in:
 
 ```text
-dawert-launcher.conf
+linux/dawert-launcher.conf
+windows/dawert-launcher.conf
 ```
 
-On Linux, `play-linux.sh` is play-only. It uses the already installed/saved
+On Linux, `linux/play-linux.sh` is play-only. It uses the already installed/saved
 language and starts the game directly; it does not reinstall or download the
 language again on every launch. If no language has been installed yet, it tells
-you to install one through `start-linux.sh` or the installer language menu.
+you to install one through `linux/start-linux.sh` or the installer language menu.
 
-On Linux, `play-linux.sh` also remembers launch mode. If the game appears on
+On Linux, `linux/play-linux.sh` also remembers launch mode. If the game appears on
 the taskbar but does not open, use the Wine virtual desktop mode. That mode is
 the default until you choose normal Wine fullscreen/window mode.
 

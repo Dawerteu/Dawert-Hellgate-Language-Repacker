@@ -2,6 +2,7 @@
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPACKER_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 
 need_cmd() {
   command -v "$1" >/dev/null 2>&1
@@ -49,7 +50,7 @@ install_python_linux() {
     run_with_privileges emerge --ask=n dev-lang/python
   else
     echo "Unsupported Linux package manager." >&2
-    echo "Install Python 3.8+ manually, then run start-linux.sh." >&2
+    echo "Install Python 3.8+ manually, then run linux/start-linux.sh." >&2
     exit 1
   fi
 }
@@ -79,7 +80,7 @@ else
     Linux) install_python_linux ;;
     Darwin) install_python_macos ;;
     *)
-      echo "Unsupported OS for this setup script. Use setup-windows.bat on Windows." >&2
+      echo "Unsupported OS for this setup script. Use windows/setup-windows.bat on Windows." >&2
       exit 1
       ;;
   esac
@@ -96,8 +97,8 @@ fi
 
 echo
 echo "Verifying repacker..."
-"$PYTHON_BIN" "$SCRIPT_DIR/repacker.py" --help >/dev/null
-chmod +x "$SCRIPT_DIR/start-linux.sh" "$SCRIPT_DIR/setup-linux.sh" 2>/dev/null || true
+"$PYTHON_BIN" "$REPACKER_DIR/repacker.py" --help >/dev/null
+chmod +x "$SCRIPT_DIR/start-linux.sh" "$SCRIPT_DIR/setup-linux.sh" "$SCRIPT_DIR/play-linux.sh" "$SCRIPT_DIR/update-linux.sh" 2>/dev/null || true
 
 echo
 echo "Setup complete."

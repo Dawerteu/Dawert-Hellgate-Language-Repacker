@@ -1,5 +1,7 @@
 $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$RepackerDir = Split-Path -Parent $ScriptDir
+$Repacker = Join-Path $RepackerDir "repacker.py"
 
 function Test-Python38 {
     param([string]$Command, [string[]]$Arguments = @())
@@ -72,7 +74,7 @@ if ($Python.Count -gt 1) {
 } else {
     $PythonArgs = @()
 }
-& $Python[0] @PythonArgs (Join-Path $ScriptDir "repacker.py") --help *> $null
+& $Python[0] @PythonArgs $Repacker --help *> $null
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Repacker verification failed."
@@ -82,6 +84,6 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host ""
 Write-Host "Setup complete."
-Write-Host "Start with start-windows.bat or start-windows.ps1."
+Write-Host "Start with windows\start-windows.bat or windows\start-windows.ps1."
 Read-Host "Press Enter to close"
 exit 0

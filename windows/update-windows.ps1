@@ -1,5 +1,7 @@
 $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$RepackerDir = Split-Path -Parent $ScriptDir
+$Repacker = Join-Path $RepackerDir "repacker.py"
 $ConfigFile = Join-Path $ScriptDir "dawert-launcher.conf"
 
 function Get-SavedLanguage {
@@ -42,10 +44,8 @@ function Find-GameDir {
     if ($env:GAME_DIR) { $Candidates += $env:GAME_DIR }
     if ($env:HELLGATE_DIR) { $Candidates += $env:HELLGATE_DIR }
     $Candidates += @(
-        (Join-Path $ScriptDir "Hellgate London"),
-        (Join-Path $ScriptDir "London2038"),
-        (Join-Path (Split-Path -Parent $ScriptDir) "Hellgate London"),
-        (Join-Path (Split-Path -Parent $ScriptDir) "London2038"),
+        (Join-Path $RepackerDir "Hellgate London"),
+        (Join-Path $RepackerDir "London2038"),
         "C:\Program Files\Flagship Studios\Hellgate London",
         "C:\Program Files (x86)\Flagship Studios\Hellgate London",
         "C:\London2038",
@@ -82,7 +82,7 @@ Write-Host ""
 
 $Python = Find-Python
 if ($null -eq $Python) {
-    Write-Host "Python 3 is required. Run setup-windows.bat first."
+    Write-Host "Python 3 is required. Run windows\setup-windows.bat first."
     Read-Host "Press Enter to close"
     exit 1
 }
@@ -114,7 +114,7 @@ Save-Language $Language
 Write-Host ""
 Write-Host "Running checksum updater..."
 Run-Python $Python @(
-    (Join-Path $ScriptDir "repacker.py"),
+    $Repacker,
     "--game-dir", $GameDir,
     "--action", "checksum-update",
     "--language", $Language,
@@ -122,5 +122,5 @@ Run-Python $Python @(
 )
 
 Write-Host ""
-Write-Host "Done. For normal play, use play-windows.bat."
+Write-Host "Done. For normal play, use windows\play-windows.bat."
 Read-Host "Press Enter to close"

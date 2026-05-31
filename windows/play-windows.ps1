@@ -1,5 +1,6 @@
 $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$RepackerDir = Split-Path -Parent $ScriptDir
 $ConfigFile = Join-Path $ScriptDir "dawert-launcher.conf"
 
 function Get-SavedLanguage {
@@ -61,10 +62,8 @@ function Find-GameDir {
     if ($env:GAME_DIR) { $Candidates += $env:GAME_DIR }
     if ($env:HELLGATE_DIR) { $Candidates += $env:HELLGATE_DIR }
     $Candidates += @(
-        (Join-Path $ScriptDir "Hellgate London"),
-        (Join-Path $ScriptDir "London2038"),
-        (Join-Path (Split-Path -Parent $ScriptDir) "Hellgate London"),
-        (Join-Path (Split-Path -Parent $ScriptDir) "London2038"),
+        (Join-Path $RepackerDir "Hellgate London"),
+        (Join-Path $RepackerDir "London2038"),
         "C:\Program Files\Flagship Studios\Hellgate London",
         "C:\Program Files (x86)\Flagship Studios\Hellgate London",
         "C:\London2038",
@@ -106,7 +105,7 @@ if ([string]::IsNullOrWhiteSpace($SavedLanguage)) {
 }
 if ([string]::IsNullOrWhiteSpace($SavedLanguage)) {
     Write-Host "No installed language is saved for direct play."
-    Write-Host "Install a language first with start-windows.bat or the repacker menu."
+    Write-Host "Install a language first with windows\start-windows.bat or the repacker menu."
     Read-Host "Press Enter to close"
     exit 1
 }
@@ -124,5 +123,5 @@ Write-Host ""
 Write-Host "Starting game directly:"
 Write-Host "  $Exe"
 Start-Process -FilePath $Exe -WorkingDirectory $WorkDir
-Write-Host "Done. If you need official updates, run update-windows.bat or menu option 12."
+Write-Host "Done. If you need official updates, run windows\update-windows.bat or menu option 12."
 Read-Host "Press Enter to close"

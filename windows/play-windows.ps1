@@ -62,6 +62,10 @@ function Find-GameDir {
     if ($env:GAME_DIR) { $Candidates += $env:GAME_DIR }
     if ($env:HELLGATE_DIR) { $Candidates += $env:HELLGATE_DIR }
     $Candidates += @(
+        (Join-Path (Split-Path -Parent $RepackerDir) "london2038\wineprefix\drive_c\Program Files\Flagship Studios\Hellgate London"),
+        (Join-Path (Split-Path -Parent $RepackerDir) "london2038\wineprefix\drive_c\London2038"),
+        (Join-Path $RepackerDir "london2038\wineprefix\drive_c\Program Files\Flagship Studios\Hellgate London"),
+        (Join-Path $RepackerDir "london2038\wineprefix\drive_c\London2038"),
         (Join-Path $RepackerDir "Hellgate London"),
         (Join-Path $RepackerDir "London2038"),
         "C:\Program Files\Flagship Studios\Hellgate London",
@@ -77,7 +81,95 @@ function Find-GameDir {
             return $Candidate
         }
     }
+    return Find-GameDirByScan
+}
+
+function Find-GameDirByScan {
+    $Roots = @(
+        (Split-Path -Parent $RepackerDir),
+        $RepackerDir,
+        (Get-Location).Path
+    )
+    if ($env:LOCALAPPDATA) {
+        $Roots += (Join-Path $env:LOCALAPPDATA "london2038")
+    }
+    if ($env:APPDATA) {
+        $Roots += (Join-Path $env:APPDATA "london2038")
+    }
+
+    foreach ($Root in $Roots) {
+        if (-not $Root -or -not (Test-Path $Root)) {
+            continue
+        }
+        $Launchers = @(Get-ChildItem -Path $Root -Filter "Launcher.exe" -File -Recurse -Depth 8 -ErrorAction SilentlyContinue)
+        foreach ($Launcher in $Launchers) {
+            $Candidate = $Launcher.DirectoryName
+            if (Test-GameDir $Candidate) {
+                return $Candidate
+            }
+        }
+    }
     return $null
+}
+
+function Resolve-GameDirInput {
+    param([string]$Path)
+    if ([string]::IsNullOrWhiteSpace($Path)) {
+        return $null
+    }
+
+    $Value = $Path.Trim().Trim('"').Trim("'")
+    try {
+        if (Test-Path -LiteralPath $Value) {
+            $Value = (Resolve-Path -LiteralPath $Value -ErrorAction Stop).Path
+        }
+    } catch {
+    }
+
+    if (Test-Path -LiteralPath $Value -PathType Leaf) {
+        $Value = Split-Path -Parent $Value
+    }
+
+    $Current = $Value
+    while (-not [string]::IsNullOrWhiteSpace($Current)) {
+        if (Test-GameDir $Current) {
+            return $Current
+        }
+        $Parent = Split-Path -Parent $Current
+        if ([string]::IsNullOrWhiteSpace($Parent) -or $Parent -eq $Current) {
+            break
+        }
+        $Current = $Parent
+    }
+
+    if (Test-Path -LiteralPath $Value -PathType Container) {
+        $Launchers = @(Get-ChildItem -Path $Value -Filter "Launcher.exe" -File -Recurse -Depth 8 -ErrorAction SilentlyContinue)
+        foreach ($Launcher in $Launchers) {
+            $Candidate = $Launcher.DirectoryName
+            if (Test-GameDir $Candidate) {
+                return $Candidate
+            }
+        }
+    }
+    return $null
+}
+
+function Show-GameDirHelp {
+    param([string]$Path)
+    Write-Host "Invalid game folder:"
+    Write-Host "  $Path"
+    Write-Host ""
+    Write-Host "Expected the Hellgate/London2038 install root folder containing:"
+    Write-Host "  Launcher.exe"
+    Write-Host "  Data\"
+    Write-Host "  MP_x64\London2038_dx9_x64.exe or MP_x86\London2038_dx9_x86.exe"
+    Write-Host ""
+    Write-Host "Example:"
+    Write-Host "  C:\Program Files\Flagship Studios\Hellgate London"
+    Write-Host "  C:\London2038"
+    Write-Host ""
+    Write-Host "You may also enter a folder inside the Hellgate install, such as Data or MP_x64;"
+    Write-Host "the launcher will walk upward and scan below that folder for Launcher.exe."
 }
 
 Write-Host "Dawert direct play launcher"
@@ -89,9 +181,10 @@ $GameDir = Find-GameDir
 if (-not $GameDir) {
     $GameDir = Read-Host "Hellgate London folder containing Data"
 }
+$GameDirInput = $GameDir
+$GameDir = Resolve-GameDirInput $GameDir
 if (-not (Test-GameDir $GameDir)) {
-    Write-Host "Invalid game folder or missing Launcher.exe / London2038 DX9 executable:"
-    Write-Host "  $GameDir"
+    Show-GameDirHelp $GameDirInput
     Read-Host "Press Enter to close"
     exit 1
 }

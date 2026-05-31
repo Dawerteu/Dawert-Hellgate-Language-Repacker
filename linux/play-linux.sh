@@ -56,24 +56,107 @@ need_cmd() {
   command -v "$1" >/dev/null 2>&1
 }
 
+is_game_dir() {
+  local path="$1"
+  [[ -d "$path/Data" && -f "$path/Launcher.exe" ]] && find_game_exe "$path" >/dev/null
+}
+
 find_game_dir() {
   local candidates=(
     "${GAME_DIR:-}"
     "${HELLGATE_DIR:-}"
+    "$REPACKER_DIR/../london2038/wineprefix/drive_c/Program Files/Flagship Studios/Hellgate London"
+    "$REPACKER_DIR/../london2038/wineprefix/drive_c/London2038"
     "$REPACKER_DIR/london2038/wineprefix/drive_c/Program Files/Flagship Studios/Hellgate London"
+    "$REPACKER_DIR/london2038/wineprefix/drive_c/London2038"
     "$PWD/london2038/wineprefix/drive_c/Program Files/Flagship Studios/Hellgate London"
+    "$PWD/london2038/wineprefix/drive_c/London2038"
     "$HOME/.local/share/london2038/wineprefix/drive_c/Program Files/Flagship Studios/Hellgate London"
     "$HOME/.local/share/london2038/wineprefix/drive_c/London2038"
   )
   local candidate
   for candidate in "${candidates[@]}"; do
     [[ -n "$candidate" ]] || continue
-    if [[ -d "$candidate/Data" && -f "$candidate/Launcher.exe" ]] && find_game_exe "$candidate" >/dev/null; then
+    if is_game_dir "$candidate"; then
       printf '%s\n' "$candidate"
       return 0
     fi
   done
+  find_game_dir_by_scan
+}
+
+find_game_dir_by_scan() {
+  local roots=(
+    "$REPACKER_DIR/.."
+    "$PWD"
+    "$HOME/.local/share/london2038"
+    "$HOME/.local/share"
+  )
+  local root launcher candidate
+  for root in "${roots[@]}"; do
+    [[ -d "$root" ]] || continue
+    while IFS= read -r launcher; do
+      candidate="$(dirname "$launcher")"
+      if is_game_dir "$candidate"; then
+        printf '%s\n' "$candidate"
+        return 0
+      fi
+    done < <(find "$root" -maxdepth 8 -type f -name Launcher.exe 2>/dev/null)
+  done
   return 1
+}
+
+resolve_game_dir_input() {
+  local value="$1"
+  local candidate current launcher
+  value="${value%\"}"
+  value="${value#\"}"
+  value="${value%\'}"
+  value="${value#\'}"
+  if [[ "$value" == "~"* ]]; then
+    value="${value/#\~/$HOME}"
+  fi
+  [[ -n "$value" ]] || return 1
+  if [[ -f "$value" ]]; then
+    value="$(dirname "$value")"
+  fi
+
+  current="$value"
+  while [[ -n "$current" && "$current" != "/" ]]; do
+    if is_game_dir "$current"; then
+      printf '%s\n' "$current"
+      return 0
+    fi
+    current="$(dirname "$current")"
+  done
+
+  if [[ -d "$value" ]]; then
+    while IFS= read -r launcher; do
+      candidate="$(dirname "$launcher")"
+      if is_game_dir "$candidate"; then
+        printf '%s\n' "$candidate"
+        return 0
+      fi
+    done < <(find "$value" -maxdepth 8 -type f -name Launcher.exe 2>/dev/null)
+  fi
+  return 1
+}
+
+print_game_dir_help() {
+  local value="$1"
+  echo "Invalid game folder:" >&2
+  echo "  $value" >&2
+  echo >&2
+  echo "Expected the Hellgate/London2038 install root folder containing:" >&2
+  echo "  Launcher.exe" >&2
+  echo "  Data/" >&2
+  echo "  MP_x64/London2038_dx9_x64.exe or MP_x86/London2038_dx9_x86.exe" >&2
+  echo >&2
+  echo "Example:" >&2
+  echo "  /DATA/hellgate/london2038/wineprefix/drive_c/Program Files/Flagship Studios/Hellgate London" >&2
+  echo >&2
+  echo "You may also enter a folder inside the Hellgate install, such as Data or MP_x64;" >&2
+  echo "the launcher will walk upward and scan below that folder for Launcher.exe." >&2
 }
 
 find_game_exe() {
@@ -123,10 +206,10 @@ GAME_DIR_VALUE="$(find_game_dir || true)"
 if [[ -z "$GAME_DIR_VALUE" ]]; then
   read -r -p "Hellgate London folder containing Data: " GAME_DIR_VALUE
 fi
+GAME_DIR_VALUE="$(resolve_game_dir_input "$GAME_DIR_VALUE" || true)"
 
-if [[ ! -d "$GAME_DIR_VALUE/Data" || ! -f "$GAME_DIR_VALUE/Launcher.exe" ]] || ! find_game_exe "$GAME_DIR_VALUE" >/dev/null; then
-  echo "Invalid game folder or missing Launcher.exe / London2038 DX9 executable:" >&2
-  echo "  $GAME_DIR_VALUE" >&2
+if [[ -z "$GAME_DIR_VALUE" ]] || ! is_game_dir "$GAME_DIR_VALUE"; then
+  print_game_dir_help "${GAME_DIR_VALUE:-"(empty)"}"
   exit 1
 fi
 
